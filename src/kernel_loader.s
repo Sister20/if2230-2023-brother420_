@@ -33,11 +33,13 @@ loader:                                        ; the loader label (defined as en
 ; More details: https://en.wikibooks.org/wiki/X86_Assembly/Protected_Mode
 enter_protected_mode:
     cli
-    mov  eax, [esp+4]
+    mov  eax, [esp+4] 
+    lgdt [eax]
     ; TODO: Load GDT from GDTDescriptor
     ;       eax at this line will carry GDTR location, dont forget to use square bracket [eax]
 
     mov  eax, cr0
+    or   eax, 0x1            ; Set the protection enable bit in eax
     ; TODO: Set bit-0 (Protection Enable bit-flag) in Control Register 0 (CR0)
     ;       Set eax with above condition, eax will be copied to CR0 with next instruction
     mov  cr0, eax
@@ -46,7 +48,9 @@ enter_protected_mode:
     ; Warning: Invalid GDT will raise exception in any instruction below
     jmp 0x8:flush_cs
 flush_cs:
-    mov ax, 10h
+    mov ax, 10h           
+    mov  ds, ax              ; Set the data segment register DS
+    mov  es, ax              ; Set the data segment register ES             ; Set the stack segment register SS
     ; TODO: Set all data segment register with 0x10
     ;       Segments register need to set with 0x10: ss, ds, es
     mov ss, ax
