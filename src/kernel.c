@@ -5,17 +5,18 @@
 #include "lib-header/framebuffer.h"
 #include "lib-header/kernel_loader.h"
 
-void write_splash_screen();
+void write_splash_screen3();
 void kernel_setup(void) {
     uint32_t a;
     uint32_t volatile b = 0x0000BABE;
     __asm__("mov $0xCAFE0000, %0" : "=r"(a));
     enter_protected_mode(&_gdt_gdtr);
-    framebuffer_clear();
+
     framebuffer_write(3, 8,  'H', 0, 0xF);
     framebuffer_write(3, 9,  'a', 0, 0xF);
     framebuffer_write(3, 10, 'i', 0, 0xF);
     framebuffer_write(3, 11, '!', 0, 0xF);
+    framebuffer_clear();
     write_splash_screen3();
     framebuffer_set_cursor(3, 9);
     while (TRUE);
@@ -55,6 +56,7 @@ void write_splash_screen3() {
                            "BBBBBB    RRRRRR     OO     OO    TT     HHHHHHHH  EEEEE    RRRRRR  \n"
                            "BB   BB   RR   RR    OO     OO    TT     HH    HH  EE       RR   RR \n"
                            "BBBBB     RR    RR    OOOOOO      TT     HH    HH  EEEEEEE  RR    RR\n"
+                           "                                                                    \n"
                            "            44       44  22222222222    0000000                     \n"
                            "            44       44  22       22  00       00                   \n"
                            "            44       44  22       22  00       00                   \n"
@@ -63,13 +65,20 @@ void write_splash_screen3() {
                            "                     44  22           00       00                   \n"
                            "                     44  22222222222    0000000                     \n";
 
-    int row = 10, col = 30;
-    for (int i = 0; i < strlen(splash_screen); i++) {
+    int row = 5, col = 5;
+    for (int i = 0; i < 69*13; i++) {
         if (splash_screen[i] == '\n') {
             row++;
-            col = 30;
+            col = 5;
         } else {
-            framebuffer_write(row, col, splash_screen[i], 2, 0);
+            if (splash_screen[i] == '4')
+                framebuffer_write(row, col, splash_screen[i], 0x0c, 0);
+            else if (splash_screen[i] == '2')
+                framebuffer_write(row, col, splash_screen[i], 0x0a, 0);
+            else if (splash_screen[i] == '0')
+                framebuffer_write(row, col, splash_screen[i], 0x09, 0);
+            else
+                framebuffer_write(row, col, splash_screen[i], 0x0b, 0);
             col++;
         }
     }
