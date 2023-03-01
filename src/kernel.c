@@ -51,25 +51,31 @@ void write_splash_screen() {
 // }
 
 void write_splash_screen3() {
-    char splash_screen[] = "BBBBB     RRRRRR      OOOOOO   TTTTTTTT  HH    HH  EEEEEEE  RRRRRR  \n"
-                           "BB   BB   RR    RR   OO     OO    TT     HH    HH  EE       RR   RR \n"
-                           "BBBBBB    RRRRRR     OO     OO    TT     HHHHHHHH  EEEEE    RRRRRR  \n"
-                           "BB   BB   RR   RR    OO     OO    TT     HH    HH  EE       RR   RR \n"
-                           "BBBBB     RR    RR    OOOOOO      TT     HH    HH  EEEEEEE  RR    RR\n"
-                           "                                                                    \n"
-                           "            44       44  22222222222    0000000                     \n"
-                           "            44       44  22       22  00       00                   \n"
-                           "            44       44  22       22  00       00                   \n"
-                           "            44       44           22  00       00                   \n"
-                           "            44444444444  22222222222  00       00                   \n"
-                           "                     44  22           00       00                   \n"
-                           "                     44  22222222222    0000000                     \n";
+    char splash_screen[] = "===============================================================================\n"
+                           "||                                                                           ||\n"
+                           "||                                                                           ||\n"
+                           "||   BBBBB     RRRRRR      OOOOOO   TTTTTTTT  HH    HH  EEEEEEE  RRRRRR      ||\n"
+                           "||   BB   BB   RR    RR   OO     OO    TT     HH    HH  EE       RR   RR     ||\n"
+                           "||   BBBBBB    RRRRRR     OO     OO    TT     HHHHHHHH  EEEEE    RRRRRR      ||\n"
+                           "||   BB   BB   RR   RR    OO     OO    TT     HH    HH  EE       RR   RR     ||\n"
+                           "||   BBBBB     RR    RR    OOOOOO      TT     HH    HH  EEEEEEE  RR    RR    ||\n"
+                           "||                                                                           ||\n"
+                           "||               44       44  22222222222    0000000                         ||\n"
+                           "||               44       44  22       22  00       00                       ||\n"
+                           "||               44       44  22       22  00       00                       ||\n"
+                           "||               44       44           22  00       00                       ||\n"
+                           "||               44444444444  22222222222  00       00                       ||\n"
+                           "||                        44  22           00       00                       ||\n"
+                           "||                        44  22222222222    0000000                         ||\n"
+                           "||                                                                           ||\n"
+                           "||                                                                           ||\n"
+                           "===============================================================================\n";
 
-    int row = 5, col = 5;
-    for (int i = 0; i < 69*13; i++) {
+    int row = 2, col = 0;
+    for (int i = 0; i < 80*19; i++) {
         if (splash_screen[i] == '\n') {
             row++;
-            col = 5;
+            col = 0;
         } else {
             if (splash_screen[i] == '4')
                 framebuffer_write(row, col, splash_screen[i], 0x0c, 0);
