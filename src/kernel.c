@@ -21,3 +21,15 @@ void kernel_setup(void) {
     while (TRUE);
     while (TRUE) b += 1;
 }
+void write_splash_screen() {
+    framebuffer_write(10, 30, 'B', 2, 0);
+    framebuffer_write(10, 31, 'R', 2, 0);
+    framebuffer_write(10, 32, 'O', 2, 0);
+    framebuffer_write(10, 33, 'T', 2, 0);
+    framebuffer_write(10, 34, 'H', 2, 0);
+    framebuffer_write(10, 35, 'E', 2, 0);
+    framebuffer_write(10, 36, 'R', 2, 0);
+    framebuffer_write(10, 37, '4', 2, 0);
+    framebuffer_write(10, 38, '2', 2, 0);
+    framebuffer_write(10, 39, '0', 2, 0);
+}
