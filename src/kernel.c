@@ -1,12 +1,11 @@
-#include "portio.c"
+#include "lib-header/portio.h"
 #include "lib-header/stdtype.h"
 #include "lib-header/stdmem.h"
-#include "gdt.c"
+#include "lib-header/gdt.h"
 #include "lib-header/framebuffer.h"
-// #include "kernel_loader.s"
 #include "lib-header/kernel_loader.h"
 
-
+void write_splash_screen();
 void kernel_setup(void) {
     uint32_t a;
     uint32_t volatile b = 0x0000BABE;
@@ -17,10 +16,12 @@ void kernel_setup(void) {
     framebuffer_write(3, 9,  'a', 0, 0xF);
     framebuffer_write(3, 10, 'i', 0, 0xF);
     framebuffer_write(3, 11, '!', 0, 0xF);
+    write_splash_screen();
     framebuffer_set_cursor(3, 9);
     while (TRUE);
     while (TRUE) b += 1;
 }
+
 void write_splash_screen() {
     framebuffer_write(10, 30, 'B', 2, 0);
     framebuffer_write(10, 31, 'R', 2, 0);
