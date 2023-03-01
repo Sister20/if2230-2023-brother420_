@@ -33,3 +33,17 @@ void write_splash_screen() {
     framebuffer_write(10, 38, '2', 2, 0);
     framebuffer_write(10, 39, '0', 2, 0);
 }
+// void write_splash_screen() {
+//     framebuffer_write(10, 0, "BBBBB     RRRRRR      OOOOOO   TTTTTTTT  HH    HH  EEEEEEE  RRRRRR  ", 2, 0);
+//     framebuffer_write(11, 0, "BB   BB   RR    RR   OO     OO    TT     HH    HH  EE       RR   RR ", 2, 0);
+//     framebuffer_write(12, 0, "BBBBBB    RRRRRR     OO     OO    TT     HHHHHHHH  EEEEE    RRRRRR  ", 2, 0);
+//     framebuffer_write(13, 0, "BB   BB   RR   RR    OO     OO    TT     HH    HH  EE       RR   RR ", 2, 0);
+//     framebuffer_write(14, 0, "BBBBB     RR    RR    OOOOOO      TT     HH    HH  EEEEEEE  RR    RR", 2, 0);
+//     framebuffer_write(15, 0, "            44       44  22222222222    0000000                     ", 2, 0);
+//     framebuffer_write(16, 0, "            44       44  22       22  00       00                   ", 2, 0);
+//     framebuffer_write(17, 0, "            44       44  22       22  00       00                   ", 2, 0);
+//     framebuffer_write(18, 0, "            44       44           22  00       00                   ", 2, 0);
+//     framebuffer_write(19, 0, "            44444444444  22222222222  00       00                   ", 2, 0);
+//     framebuffer_write(20, 0, "                     44  22           00       00                   ", 2, 0);
+//     framebuffer_write(21, 0, "                     44  22222222222    0000000                     ", 2, 0);
+// }
