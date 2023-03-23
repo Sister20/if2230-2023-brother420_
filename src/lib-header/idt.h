@@ -38,6 +38,13 @@ struct IDTGate {
     uint16_t offset_low;
 
     // TODO : Implement
+    uint16_t segment;
+    uint8_t _reserved;
+    uint8_t _r_bit_1 : 3;
+    uint8_t _r_bit_2 : 3;
+    uint8_t gate_32 : 1;
+    uint8_t _r_bit_3 : 1;
+    
 } __attribute__((packed));
 
 /**
@@ -47,6 +54,9 @@ struct IDTGate {
  * ...
  */
 // TODO : Implement
+struct IDT {
+    struct IDTGate entries[IDT_MAX_ENTRY_COUNT];
+} __attribute__((packed));
 // ...
 
 /**
@@ -56,6 +66,10 @@ struct IDTGate {
  * ...
  */
 // TODO : Implement
+struct IDTR {
+    uint16_t limit;
+    uint32_t base;
+} __attribute__((packed));
 // ...
 
 
