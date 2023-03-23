@@ -32,6 +32,8 @@ kernel:
 	@$(CC) $(CFLAGS) src/kernel.c -o bin/kernel.o
 	@$(CC) $(CFLAGS) src/gdt.c -o bin/gdt.o
 	@$(CC) $(CFLAGS) src/portio.c -o bin/portio.o
+	@$(CC) $(CFLAGS) src/interrupt.c -o bin/interrupt.o
+	@$(CC) $(CFLAGS) src/idt.c -o bin/idt.o
 	@$(LIN) $(LFLAGS) bin/*.o -o $(OUTPUT_FOLDER)/kernel
 	@echo Linking object files and generate elf32...
 	@rm -f *.o
