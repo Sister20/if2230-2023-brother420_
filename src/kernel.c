@@ -20,6 +20,20 @@ void kernel_setup(void) {
 }
 
 
+/* Cek rusak */
+// void kernel_setup(void) {
+//     uint32_t a;
+//     uint32_t volatile b = 0x0000BABE;
+//     __asm__("mov $0xCAFE0000, %0" : "=r"(a));
+//     enter_protected_mode(&_gdt_gdtr);
+//     framebuffer_clear();
+//     write_splash_screen3();
+//     framebuffer_set_cursor(9, 40);
+//     while (TRUE);
+//     while (TRUE) b += 1;
+// }
+
+
 void write_splash_screen3() {
     char splash_screen[] = "===============================================================================\n"
                            "||                                                                           ||\n"

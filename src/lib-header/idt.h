@@ -19,6 +19,7 @@
 extern void *isr_stub_table[ISR_STUB_TABLE_LIMIT];
 
 extern struct IDTR _idt_idtr;
+extern struct interrupt_descriptor_table interrupt_descriptor_table;
 
 /**
  * IDTGate, IDT entry that point into interrupt handler
@@ -35,16 +36,19 @@ extern struct IDTR _idt_idtr;
  */
 struct IDTGate {
     // First 32-bit (Bit 0 to 31)
-    uint8_t _reserved : 5;
-    uint8_t _r_bit_1 : 3;
-    uint8_t _r_bit_2 : 3;
-    uint8_t gate_32 : 1;
-    uint8_t _r_bit_3 : 1;
-    uint8_t privilege : 2;
-    uint8_t present : 1;
     uint16_t offset_low;
-    uint16_t offset_high;
     uint16_t segment;
+    uint8_t _reserved   : 5;
+    uint8_t _r_bit_1    : 3;
+    uint8_t _r_bit_2    : 3;
+    uint8_t gate_32     : 1;
+    uint8_t _r_bit_3    : 1;
+    uint8_t privilege   : 2;
+    uint8_t present     : 1;
+    // uint8_t valid : 1; // Valid buat apa ya?
+    
+    uint16_t offset_high;
+    
     
     // TODO : Implement
 } __attribute__((packed));
