@@ -71,7 +71,7 @@ struct interrupt_descriptor_table {
  */
 struct IDTR {
     uint16_t limit;
-    uint32_t base;
+    struct interrupt_descriptor_table *base;
 } __attribute__((packed));
 // TODO : Implement
 // ...

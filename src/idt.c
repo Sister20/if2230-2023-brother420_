@@ -3,7 +3,12 @@
 struct interrupt_descriptor_table interrupt_descriptor_table;
 struct IDTR _idt_idtr;
 
-void set_interrupt_gate(uint8_t int_vector, void *handler_address, uint16_t gdt_seg_selector, uint8_t privilege);
+struct IDTR _idt_idtr = {
+    .limit = sizeof(struct interrupt_descriptor_table) - 1,
+    .base = &interrupt_descriptor_table
+};
+
+// void set_interrupt_gate(uint8_t int_vector, void *handler_address, uint16_t gdt_seg_selector, uint8_t privilege);
 void initialize_idt(void) {
     /* TODO :
    * Iterate all isr_stub_table,

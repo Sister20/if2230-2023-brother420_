@@ -14,9 +14,11 @@ void kernel_setup(void) {
     pic_remap();
     initialize_idt();
     framebuffer_clear();
+    write_splash_screen3();
     framebuffer_set_cursor(0, 0);
     __asm__("int $0x4");
     while (TRUE);
+    
 }
 
 
