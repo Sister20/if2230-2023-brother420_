@@ -43,11 +43,9 @@ struct IDTGate {
     uint8_t _r_bit_2    : 3;
     uint8_t gate_32     : 1;
     uint8_t _r_bit_3    : 1;
-    uint8_t privilege   : 2;
-    uint8_t present     : 1;
-    // uint8_t valid : 1; // Valid buat apa ya?
-    
-    uint16_t offset_high;
+    uint8_t DPL         : 2;
+    uint8_t valid       : 1;    
+    uint16_t offset_high; // Kenapa masih bootloop T_T?
     
     
     // TODO : Implement
