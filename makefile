@@ -28,7 +28,7 @@ clean:
 
 kernel:
 	$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/kernel_loader.s -o $(OUTPUT_FOLDER)/kernel_loader.o
-# TODO: Compile C file with CFLAGS
+	$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/intsetup.s -o $(OUTPUT_FOLDER)/intsetup.o
 	@$(CC) $(CFLAGS) src/kernel.c -o bin/kernel.o
 	@$(CC) $(CFLAGS) src/gdt.c -o bin/gdt.o
 	@$(CC) $(CFLAGS) src/portio.c -o bin/portio.o
@@ -43,7 +43,7 @@ iso: kernel
 	@cp $(OUTPUT_FOLDER)/kernel     $(OUTPUT_FOLDER)/iso/boot/
 	@cp other/grub1                 $(OUTPUT_FOLDER)/iso/boot/grub/
 	@cp $(SOURCE_FOLDER)/menu.lst   $(OUTPUT_FOLDER)/iso/boot/grub/
-# TODO: Create ISO image
+
 	genisoimage -R                 \
 		-b boot/grub/grub1         \
 		-no-emul-boot              \
