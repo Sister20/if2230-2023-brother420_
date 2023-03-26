@@ -47,11 +47,9 @@ void main_interrupt_handler(
     __attribute__((unused)) struct InterruptStack info
 ) {
     switch (int_number) {
-        // case IRQ_KEYBOARD:
-        //     keyboard_isr();
-        //     break;
-        // default:
-        //     break;
+        case (PIC1 + IRQ_KEYBOARD):
+            keyboard_isr();
+            break;
     }
 }
 
