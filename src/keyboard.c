@@ -75,7 +75,11 @@ void keyboard_isr(void) {
           if(keyboard_state.buffer_index){
             keyboard_state.buffer_index--;
           } else if(keyboard_state.buffer_index==0){
-            row--;
+            if(row<=0){
+              row=0;
+            } else {
+              row--;
+            }
           }
           framebuffer_set_cursor(row, keyboard_state.buffer_index);
           mapped_char=0;
@@ -84,8 +88,20 @@ void keyboard_isr(void) {
           keyboard_state.keyboard_buffer[keyboard_state.buffer_index]=0;
           framebuffer_set_cursor(row, keyboard_state.buffer_index);
           mapped_char=0;
-          row++;
+          if(row>=24){
+            row=24;
+          } else {
+            row++;
+          }
         } else if(mapped_char!=0 || mapped_char=='\n' || mapped_char=='\b'){
+          if(keyboard_state.buffer_index>=79){
+            if(row>=24){
+              row=24;
+            } else {
+              row++;
+            }
+            keyboard_state.buffer_index=0;
+          }
           keyboard_state.buffer_index++;
           keyboard_state.keyboard_buffer[keyboard_state.buffer_index]=mapped_char;
           framebuffer_set_cursor(row, keyboard_state.buffer_index);
