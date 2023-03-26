@@ -27,7 +27,7 @@ build: iso
 clean:
 	rm -rf *.o *.iso $(OUTPUT_FOLDER)/kernel
 
-@qemu-system-i386 -s -S -drive file=storage.bin,format=raw,if=ide,index=0,media=disk -cdrom os2023.iso
+# @qemu-system-i386 -s -S -drive file=storage.bin,format=raw,if=ide,index=0,media=disk -cdrom os2023.iso
 
 kernel:
 	$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/kernel_loader.s -o $(OUTPUT_FOLDER)/kernel_loader.o
