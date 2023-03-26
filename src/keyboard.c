@@ -54,9 +54,11 @@ bool is_keyboard_blocking(void){
 }
 
 void keyboard_isr(void) {
-    if (!keyboard_state.keyboard_input_on)
+    if (!keyboard_state.keyboard_input_on){
         keyboard_state.buffer_index = 0;
-    else {
+        framebuffer_write(21,11,'L',0xa,0);
+    } else {
+        framebuffer_write(21,12,'M',0xa,0);
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
         // TODO : Implement scancode processing
@@ -67,6 +69,7 @@ void keyboard_isr(void) {
         } else if (scancode == '\b') {
             keyboard_state.buffer_index--;
         } else {
+            // get_keyboard_buffer(&mapped_char);
             keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
             keyboard_state.buffer_index++;
         }
