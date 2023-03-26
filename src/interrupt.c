@@ -47,11 +47,11 @@ void main_interrupt_handler(
     __attribute__((unused)) struct InterruptStack info
 ) {
     switch (int_number) {
-        case IRQ_KEYBOARD:
-            keyboard_state_activate();
-            break;
-        default:
-            break;
+        // case IRQ_KEYBOARD:
+        //     keyboard_isr();
+        //     break;
+        // default:
+        //     break;
     }
 }
 

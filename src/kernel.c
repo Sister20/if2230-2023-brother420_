@@ -1,3 +1,4 @@
+// #include "lib-header/keyboard.h"
 #include "lib-header/portio.h"
 #include "lib-header/stdtype.h"
 #include "lib-header/stdmem.h"
@@ -5,7 +6,9 @@
 #include "lib-header/framebuffer.h"
 #include "lib-header/kernel_loader.h"
 #include "lib-header/idt.h"
+#include "lib-header/keyboard.h"
 #include "lib-header/interrupt.h"
+
 
 void write_splash_screen3();
 
