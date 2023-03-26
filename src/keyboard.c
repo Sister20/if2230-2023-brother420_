@@ -3,7 +3,17 @@
 #include "lib-header/stdmem.h"
 #include "lib-header/framebuffer.h"
 static struct KeyboardDriverState keyboard_state;
-static int row=0;
+static int row = 0;
+static char antiDouble = -1;
+static int holding = 0;
+static char charHold = -1;
+static int backspaceLine[25] = {
+    0,0,0,0,0,
+    0,0,0,0,0,
+    0,0,0,0,0,
+    0,0,0,0,0,
+    0,0,0,0,0
+};
 const char keyboard_scancode_1_to_ascii_map[256] = {
       0, 0x1B, '1', '2', '3', '4', '5', '6',  '7', '8', '9',  '0',  '-', '=', '\b', '\t',
     'q',  'w', 'e', 'r', 't', 'y', 'u', 'i',  'o', 'p', '[',  ']', '\n',   0,  'a',  's',
@@ -63,7 +73,6 @@ bool is_keyboard_blocking(void){
  * after calling `keyboard_state_activate();`
  */
 void keyboard_isr(void) {
-  
     if (!keyboard_state.keyboard_input_on){
         keyboard_state.buffer_index = 0;
         framebuffer_write(21,11,'L',0xa,0);
@@ -71,44 +80,69 @@ void keyboard_isr(void) {
     else {
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
-        if(mapped_char=='\b'){
-          if(keyboard_state.buffer_index){
-            keyboard_state.buffer_index--;
-          } else if(keyboard_state.buffer_index==0){
-            if(row<=0){
-              row=0;
-            } else {
-              row--;
+        if (mapped_char != antiDouble){
+          antiDouble = mapped_char;
+          if (mapped_char == '\b') {
+            if (keyboard_state.buffer_index) {
+              keyboard_state.buffer_index--;
+              backspaceLine[row]--;
+            } else if (keyboard_state.buffer_index == 0){
+              if (row <= 0) {
+                row = 0;
+              } else {
+                row--;
+                keyboard_state.buffer_index = backspaceLine[row];
+              }
             }
-          }
-          framebuffer_set_cursor(row, keyboard_state.buffer_index);
-          mapped_char=0;
-        } else if(mapped_char=='\n'){
-          keyboard_state.buffer_index=0;
-          keyboard_state.keyboard_buffer[keyboard_state.buffer_index]=0;
-          framebuffer_set_cursor(row, keyboard_state.buffer_index);
-          mapped_char=0;
-          if(row>=24){
-            row=24;
-          } else {
-            row++;
-          }
-        } else if(mapped_char!=0 || mapped_char=='\n' || mapped_char=='\b'){
-          if(keyboard_state.buffer_index>=79){
-            if(row>=24){
-              row=24;
+            framebuffer_write(row, keyboard_state.buffer_index, 0, 0x0c, 0);
+            framebuffer_set_cursor(row, keyboard_state.buffer_index);
+          } else if (mapped_char=='\n') {
+            keyboard_state.buffer_index=0;
+            keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = 0;
+            framebuffer_set_cursor(row + 1, keyboard_state.buffer_index);
+            mapped_char = 0;
+            if (row >= 24) {
+              row = 24;
             } else {
               row++;
             }
-            keyboard_state.buffer_index=0;
+          } else if (mapped_char !=0){
+            framebuffer_write(row, keyboard_state.buffer_index, mapped_char, 0x0c, 0);
+            if (keyboard_state.buffer_index >= 79){
+              if (row >= 24) {
+                row = 24;
+              } else {
+                row++;
+              }
+              keyboard_state.buffer_index = 0;
+            } else {
+              keyboard_state.buffer_index++;
+              backspaceLine[row]++;
+              keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
+            }
+            if (keyboard_state.buffer_index >= 79 && row < 24){
+              framebuffer_set_cursor(row + 1, 0);
+            } else if (row >= 24){ 
+              framebuffer_set_cursor(24, 0);
+            } else {
+              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+            }
+          } else {
+            
           }
-          keyboard_state.buffer_index++;
-          keyboard_state.keyboard_buffer[keyboard_state.buffer_index]=mapped_char;
-          framebuffer_set_cursor(row, keyboard_state.buffer_index);
-        } else {
 
+        } else {
+          if (mapped_char == charHold){
+            holding++;
+          } else { 
+            charHold = mapped_char;
+            holding = 0;
+          }
+          antiDouble = -1;
+          for (int i = 0; i < 550000 - holding * 40000; i++)
+            io_wait();
         }
-        framebuffer_write(row, keyboard_state.buffer_index, mapped_char, 0x0c, 0);
+
     }
     pic_ack(IRQ_KEYBOARD);
 }
