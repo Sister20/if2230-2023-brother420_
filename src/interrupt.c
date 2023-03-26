@@ -1,4 +1,5 @@
 #include "lib-header/interrupt.h"
+#include "lib-header/framebuffer.h"
 
 void io_wait(void) {
     out(0x80, 0);
@@ -46,7 +47,17 @@ void main_interrupt_handler(
     uint32_t int_number,
     __attribute__((unused)) struct InterruptStack info
 ) {
-    switch (int_number) {
-
+    if (int_number == 32){ // casting paksa di awal
+        keyboard_isr();
     }
+
+    switch (int_number) {
+        case (PIC1_OFFSET + IRQ_KEYBOARD):
+            keyboard_isr();
+    }
+}
+
+void activate_keyboard_interrupt(void) {
+    out(PIC1_DATA, PIC_DISABLE_ALL_MASK ^ (1 << IRQ_KEYBOARD));
+    out(PIC2_DATA, PIC_DISABLE_ALL_MASK);
 }
