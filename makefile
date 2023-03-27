@@ -21,15 +21,18 @@ disk:
 	@qemu-img create -f raw $(OUTPUT_FOLDER)/$(DISK_NAME).bin 4M
 
 run: all
-	@qemu-system-i386 -s -S -drive file=storage.bin,format=raw,if=ide,index=0,media=disk -cdrom $(OUTPUT_FOLDER)/$(ISO_NAME).iso
+	@qemu-system-i386 -s -S -drive file=bin/storage.bin,format=raw,if=ide,index=0,media=disk -cdrom $(OUTPUT_FOLDER)/$(ISO_NAME).iso
+
+
 all: build
 build: iso
+
 clean:
 	rm -rf *.o *.iso $(OUTPUT_FOLDER)/kernel
 
 # @qemu-system-i386 -s -S -drive file=storage.bin,format=raw,if=ide,index=0,media=disk -cdrom os2023.iso
 
-kernel:
+kernel: disk
 	$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/kernel_loader.s -o $(OUTPUT_FOLDER)/kernel_loader.o
 	$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/intsetup.s -o $(OUTPUT_FOLDER)/intsetup.o
 	@$(CC) $(CFLAGS) src/kernel.c -o bin/kernel.o
@@ -40,6 +43,8 @@ kernel:
 	@$(CC) $(CFLAGS) src/idt.c -o bin/idt.o
 	@$(CC) $(CFLAGS) src/keyboard.c -o bin/keyboard.o
 	@$(CC) $(CFLAGS) src/interrupt.c -o bin/interrupt.o
+	@$(CC) $(CFLAGS) src/disk.c -o bin/disk.o
+	@$(CC) $(CFLAGS) src/fat32.c -o bin/fat32.o
 	@$(LIN) $(LFLAGS) bin/*.o -o $(OUTPUT_FOLDER)/kernel
 	@echo Linking object files and generate elf32...
 	@rm -f *.o
