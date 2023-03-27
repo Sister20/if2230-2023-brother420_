@@ -46,9 +46,6 @@ struct ClusterBuffer {
 } __attribute__((packed));
 
 
-
-
-
 /* -- FAT32 Data Structures -- */
 
 /**
@@ -160,7 +157,7 @@ uint32_t cluster_to_lba(uint32_t cluster);
  * @param name               8-byte char for directory name
  * @param parent_dir_cluster Parent directory cluster number
  */
-void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster);
+// void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster);
 
 /**
  * Checking whether filesystem signature is missing or not in boot sector
@@ -218,7 +215,7 @@ void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count);
  *                buffer_size must be exactly sizeof(struct FAT32DirectoryTable)
  * @return Error code: 0 success - 1 not a folder - 2 not found - -1 unknown
  */
-int8_t read_directory(struct FAT32DriverRequest request);
+// int8_t read_directory(struct FAT32DriverRequest request);
 
 
 /**
