@@ -48,7 +48,9 @@ void main_interrupt_handler(
     __attribute__((unused)) struct InterruptStack info
 ) {
     if (int_number == 32){ // casting paksa di awal
-        keyboard_isr();
+        if (is_keyboard_blocking()) {
+            int_number++;
+        }
     }
 
     switch (int_number) {
