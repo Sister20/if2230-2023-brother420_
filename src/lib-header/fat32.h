@@ -197,7 +197,7 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param cluster_number Cluster number to read
  * @param cluster_count  Cluster count to read, due limitation of read_blocks block_count 255 => max cluster_count = 63
  */
-// void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count);
+void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count);
 
 
 
@@ -224,7 +224,7 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param request All attribute will be used for read, buffer_size will limit reading count
  * @return Error code: 0 success - 1 not a file - 2 not enough buffer - 3 not found - -1 unknown
  */
-// int8_t read(struct FAT32DriverRequest request);
+int8_t read(struct FAT32DriverRequest request);
 
 /**
  * FAT32 write, write a file or folder to file system.
@@ -232,7 +232,7 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param request All attribute will be used for write, buffer_size == 0 then create a folder / directory
  * @return Error code: 0 success - 1 file/folder already exist - 2 invalid parent cluster - -1 unknown
  */
-// int8_t write(struct FAT32DriverRequest request);
+int8_t write(struct FAT32DriverRequest request);
 
 
 /**
@@ -241,6 +241,6 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param request buf and buffer_size is unused
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
-// int8_t delete(struct FAT32DriverRequest request);
+int8_t delete(struct FAT32DriverRequest request);
 
 #endif

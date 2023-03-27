@@ -3,12 +3,11 @@
 #include "lib-header/stdmem.h"
 
 // static struct ClusterBuffer clusterBuffer;
-static struct FAT32FileAllocationTable fat_table;
+// static struct FAT32FileAllocationTable fat_table;
 // static struct FAT32DirectoryEntry root_dir_entry;
 // static struct FAT32DirectoryTable root_dir_table;
-// static struct FAT32DriverState driver_state;
+struct FAT32DriverState driver_state;
 // static struct FAT32DriverRequest driver_request;
-
 
 const uint8_t fs_signature[BLOCK_SIZE] = {
     'C', 'o', 'u', 'r', 's', 'e', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',  ' ',
@@ -39,16 +38,29 @@ uint32_t cluster_to_lba(uint32_t cluster){
  * @param name               8-byte char for directory name
  * @param parent_dir_cluster Parent directory cluster number
  */
-// void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster){
-    
-// }
+void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster){
+    dir_table->table[0].name[0] = '.';
+    dir_table->table[0].cluster_high = (uint16_t)(parent_dir_cluster >> 16);
+    dir_table->table[0].cluster_low = (uint16_t)(parent_dir_cluster & 0xFFFF);
+
+    dir_table->table[1].name[0] = '.';
+    dir_table->table[1].name[1] = '.';
+    dir_table->table[1].cluster_high = (uint16_t)(parent_dir_cluster >> 16);
+    dir_table->table[1].cluster_low = (uint16_t)(parent_dir_cluster & 0xFFFF);
+
+    for (uint8_t i = 0; i < 8; i++){
+        dir_table->table[2].name[i] = name[i];
+    }
+
+    dir_table->table[2].cluster_high = 0;
+    dir_table->table[2].cluster_low = 2;
+}
 
 /**
  * Checking whether filesystem signature is missing or not in boot sector
  * 
  * @return True if memcmp(boot_sector, fs_signature) returning inequality
  */
-
 bool is_empty_storage(void){
     uint8_t boot_sector[BLOCK_SIZE];
     read_blocks(boot_sector, 0, 1);
@@ -61,9 +73,19 @@ bool is_empty_storage(void){
  * and initialized root directory) into cluster number 1
  */
 void create_fat32(void){
-    fat_table.cluster_map[0] = CLUSTER_0_VALUE;
-    fat_table.cluster_map[1] = CLUSTER_1_VALUE;
-    fat_table.cluster_map[2] = FAT32_FAT_END_OF_FILE;
+    uint8_t boot_sector[BLOCK_SIZE];
+    memset(boot_sector, 0, BLOCK_SIZE);
+    memcpy(boot_sector, fs_signature, BLOCK_SIZE);
+    write_blocks(boot_sector, 0, 1);
+
+    driver_state.fat_table.cluster_map[0] = CLUSTER_0_VALUE;
+    driver_state.fat_table.cluster_map[1] = CLUSTER_1_VALUE;
+    write_clusters(driver_state.fat_table.cluster_map, 1, 1);
+
+    struct  FAT32DirectoryTable root_dir_table = {0};
+    init_directory_table(&root_dir_table, "root", 0);
+    write_clusters(&root_dir_table.table, 2, 1);
+    
 }
 
 /**
@@ -74,7 +96,8 @@ void initialize_filesystem_fat32(void){
     if (is_empty_storage()){
         create_fat32();
     } else {
-
+        create_fat32();
+        read_clusters(driver_state.fat_table.cluster_map, 1, 1);
     }
 }
 
@@ -98,9 +121,9 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param cluster_number Cluster number to read
  * @param cluster_count  Cluster count to read, due limitation of read_blocks block_count 255 => max cluster_count = 63
  */
-// void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
-
-// }
+void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
+    read_blocks(ptr, cluster_number * CLUSTER_SIZE, cluster_count * CLUSTER_SIZE);
+}
 
 
 
@@ -119,7 +142,7 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @return Error code: 0 success - 1 not a folder - 2 not found - -1 unknown
  */
 // int8_t read_directory(struct FAT32DriverRequest request){
-//     return 0;
+
 // }
 
 
@@ -140,7 +163,7 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @return Error code: 0 success - 1 file/folder already exist - 2 invalid parent cluster - -1 unknown
  */
 // int8_t write(struct FAT32DriverRequest request){
-//     return 0;
+
 // }
 
 
@@ -151,5 +174,5 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
 // int8_t delete(struct FAT32DriverRequest request){
-//     return 0;
+    
 // }
