@@ -13,6 +13,15 @@
 
 void write_splash_screen3();
 
+// void kernel_setup(void) {
+//     enter_protected_mode(&_gdt_gdtr);
+//     pic_remap();
+//     initialize_idt();
+//     framebuffer_clear();
+//     framebuffer_set_cursor(0,0);
+//     write_blocks(fs_signature, 0, 1);
+// }
+
 void kernel_setup(void) {
     enter_protected_mode(&_gdt_gdtr);
     pic_remap();
