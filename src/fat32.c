@@ -83,7 +83,7 @@ void create_fat32(void){
     write_clusters(driver_state.fat_table.cluster_map, 1, 1);
 
     struct  FAT32DirectoryTable root_dir_table = {0};
-    init_directory_table(&root_dir_table, "root", 0);
+    init_directory_table(&root_dir_table, "ROOT", 0);
     write_clusters(&root_dir_table.table, 2, 1);
     
 }
