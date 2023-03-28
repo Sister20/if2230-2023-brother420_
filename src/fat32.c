@@ -200,16 +200,23 @@ int8_t read(struct FAT32DriverRequest request){
 int8_t write(struct FAT32DriverRequest request){
     read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
     read_clusters(&driver_state.fat_table, request.parent_cluster_number, 1);
-        for (int i = 0; i < 64; i++){
-            if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
-                if (request.buffer_size < driver_state.dir_table_buf.table[i].filesize) {
-                    return 2;
-                } else if (driver_state.dir_table_buf.table[i].attribute == 1){
-                    return 1;
-                }   
-            }
+    uint32_t cluster = 0;
+    while (driver_state.fat_table.cluster_map[cluster] != 0){
+        cluster++;
+    }
+    // Todo : Request wajib memberikan request.parent_cluster_number yang valid (cluster tersebut berisikan directory). 
+    
+    for (int i = 0; i < 64; i++){
+        if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
+                return 1;
         }
-        return 0;    
+    }
+    if(request.buffer_size == 0){
+        driver_state.fat_table.cluster_map[cluster] = FAT32_FAT_END_OF_FILE;
+        write_clusters(driver_state.fat_table.cluster_map,1,1);
+    }
+
+    return 0;    
 }
 
 
