@@ -142,6 +142,7 @@ void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
  *                buffer_size must be exactly sizeof(struct FAT32DirectoryTable)
  * @return Error code: 0 success - 1 not a folder - 2 not found - -1 unknown
  */
+
 // int8_t read_directory(struct FAT32DriverRequest request){
 
 // }
@@ -179,7 +180,7 @@ int8_t read(struct FAT32DriverRequest request){
                     }
                 }
                 
-                //Implementasi untuk read isi dari cluster belum dilakukan
+                
                 
             }
             break;
@@ -214,6 +215,8 @@ int8_t write(struct FAT32DriverRequest request){
     if(request.buffer_size == 0){
         driver_state.fat_table.cluster_map[cluster] = FAT32_FAT_END_OF_FILE;
         write_clusters(driver_state.fat_table.cluster_map,1,1);
+    } else if (request.buffer_size > 0){
+
     }
 
     return 0;    
