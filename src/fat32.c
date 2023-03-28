@@ -110,7 +110,7 @@ void initialize_filesystem_fat32(void){
  * @param cluster_count  Cluster count to write, due limitation of write_blocks block_count 255 => max cluster_count = 63
  */
 void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_count){
-    write_blocks(ptr, cluster_number * CLUSTER_SIZE, cluster_count * CLUSTER_SIZE);
+    write_blocks(ptr, cluster_number * 4, cluster_count * CLUSTER_BLOCK_COUNT);
 }
 
 /**

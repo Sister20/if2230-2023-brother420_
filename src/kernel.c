@@ -25,6 +25,7 @@ void write_splash_screen3();
 void kernel_setup(void) {
     enter_protected_mode(&_gdt_gdtr);
     pic_remap();
+    activate_keyboard_interrupt();
     initialize_idt();
     // activate_keyboard_interrupt();
     framebuffer_clear();

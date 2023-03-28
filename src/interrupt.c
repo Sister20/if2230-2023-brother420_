@@ -47,11 +47,6 @@ void main_interrupt_handler(
     uint32_t int_number,
     __attribute__((unused)) struct InterruptStack info
 ) {
-    if (int_number == 32){ // casting paksa di awal
-        if (is_keyboard_blocking()) {
-            int_number++;
-        }
-    }
 
     switch (int_number) {
         case (PIC1_OFFSET + IRQ_KEYBOARD):
