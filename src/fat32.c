@@ -80,10 +80,11 @@ void create_fat32(void){
 
     driver_state.fat_table.cluster_map[0] = CLUSTER_0_VALUE;
     driver_state.fat_table.cluster_map[1] = CLUSTER_1_VALUE;
+    driver_state.fat_table.cluster_map[2] = FAT32_FAT_END_OF_FILE;
     write_clusters(driver_state.fat_table.cluster_map, 1, 1);
-
+    
     struct  FAT32DirectoryTable root_dir_table = {0};
-    init_directory_table(&root_dir_table, "ROOT", 0);
+    init_directory_table(&root_dir_table, "ROOT", 2);
     write_clusters(&root_dir_table.table, 2, 1);
     
 }
@@ -122,7 +123,7 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param cluster_count  Cluster count to read, due limitation of read_blocks block_count 255 => max cluster_count = 63
  */
 void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
-    read_blocks(ptr, cluster_number * CLUSTER_SIZE, cluster_count * CLUSTER_SIZE);
+    read_blocks(ptr, cluster_number * 4, cluster_count * CLUSTER_BLOCK_COUNT);
 }
 
 
@@ -152,9 +153,43 @@ void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
  * @param request All attribute will be used for read, buffer_size will limit reading count
  * @return Error code: 0 success - 1 not a file - 2 not enough buffer - 3 not found - -1 unknown
  */
-// int8_t read(struct FAT32DriverRequest request){
-//     return 0;
-// }
+int8_t read(struct FAT32DriverRequest request){
+    uint32_t total_cluster;
+    uint32_t location;
+    read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
+    read_clusters(&driver_state.fat_table, request.parent_cluster_number, 1);
+    for (int i = 0; i < 64; i++){
+        if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
+            if (request.buffer_size < driver_state.dir_table_buf.table[i].filesize) {
+                return 2;
+            } else if (driver_state.dir_table_buf.table[i].attribute == 1){
+                return 1;
+            }   
+            total_cluster = driver_state.dir_table_buf.table[i].filesize / CLUSTER_SIZE;
+            if (total_cluster * CLUSTER_SIZE < driver_state.dir_table_buf.table[i].filesize){
+                total_cluster += 1;
+            } else {
+                location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
+                for (uint32_t j = 0; j < total_cluster; j++){
+                    if (j == 0){
+                    read_clusters(request.buf + CLUSTER_SIZE * j, location, 1);
+                    } else {
+                        read_clusters(request.buf + CLUSTER_SIZE * j, driver_state.fat_table.cluster_map[location], 1);
+                        location = driver_state.fat_table.cluster_map[location];
+                    }
+                }
+                
+                //Implementasi untuk read isi dari cluster belum dilakukan
+                
+            }
+            break;
+        }
+    
+
+    }
+    return 0;
+}
+
 
 /**
  * FAT32 write, write a file or folder to file system.
@@ -162,9 +197,20 @@ void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
  * @param request All attribute will be used for write, buffer_size == 0 then create a folder / directory
  * @return Error code: 0 success - 1 file/folder already exist - 2 invalid parent cluster - -1 unknown
  */
-// int8_t write(struct FAT32DriverRequest request){
-
-// }
+int8_t write(struct FAT32DriverRequest request){
+    read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
+    read_clusters(&driver_state.fat_table, request.parent_cluster_number, 1);
+        for (int i = 0; i < 64; i++){
+            if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
+                if (request.buffer_size < driver_state.dir_table_buf.table[i].filesize) {
+                    return 2;
+                } else if (driver_state.dir_table_buf.table[i].attribute == 1){
+                    return 1;
+                }   
+            }
+        }
+        return 0;    
+}
 
 
 /**
