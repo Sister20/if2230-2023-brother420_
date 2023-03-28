@@ -2,6 +2,14 @@
 #include "lib-header/fat32.h"
 #include "lib-header/stdmem.h"
 
+// static struct ClusterBuffer clusterBuffer;
+static struct FAT32FileAllocationTable fat_table;
+// static struct FAT32DirectoryEntry root_dir_entry;
+// static struct FAT32DirectoryTable root_dir_table;
+// static struct FAT32DriverState driver_state;
+// static struct FAT32DriverRequest driver_request;
+
+
 const uint8_t fs_signature[BLOCK_SIZE] = {
     'C', 'o', 'u', 'r', 's', 'e', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',  ' ',
     'D', 'e', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'b', 'y', ' ', ' ', ' ', ' ',  ' ',
@@ -31,15 +39,16 @@ uint32_t cluster_to_lba(uint32_t cluster){
  * @param name               8-byte char for directory name
  * @param parent_dir_cluster Parent directory cluster number
  */
-void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster){
+// void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster){
     
-}
+// }
 
 /**
  * Checking whether filesystem signature is missing or not in boot sector
  * 
  * @return True if memcmp(boot_sector, fs_signature) returning inequality
  */
+
 bool is_empty_storage(void){
     uint8_t boot_sector[BLOCK_SIZE];
     read_blocks(boot_sector, 0, 1);
@@ -52,7 +61,9 @@ bool is_empty_storage(void){
  * and initialized root directory) into cluster number 1
  */
 void create_fat32(void){
-
+    fat_table.cluster_map[0] = CLUSTER_0_VALUE;
+    fat_table.cluster_map[1] = CLUSTER_1_VALUE;
+    fat_table.cluster_map[2] = FAT32_FAT_END_OF_FILE;
 }
 
 /**
@@ -76,7 +87,7 @@ void initialize_filesystem_fat32(void){
  * @param cluster_count  Cluster count to write, due limitation of write_blocks block_count 255 => max cluster_count = 63
  */
 void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_count){
-    
+    write_blocks(ptr, cluster_number * CLUSTER_SIZE, cluster_count * CLUSTER_SIZE);
 }
 
 /**
@@ -87,9 +98,9 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param cluster_number Cluster number to read
  * @param cluster_count  Cluster count to read, due limitation of read_blocks block_count 255 => max cluster_count = 63
  */
-void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
+// void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
 
-}
+// }
 
 
 
@@ -107,9 +118,9 @@ void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
  *                buffer_size must be exactly sizeof(struct FAT32DirectoryTable)
  * @return Error code: 0 success - 1 not a folder - 2 not found - -1 unknown
  */
-int8_t read_directory(struct FAT32DriverRequest request){
-
-}
+// int8_t read_directory(struct FAT32DriverRequest request){
+//     return 0;
+// }
 
 
 /**
@@ -118,9 +129,9 @@ int8_t read_directory(struct FAT32DriverRequest request){
  * @param request All attribute will be used for read, buffer_size will limit reading count
  * @return Error code: 0 success - 1 not a file - 2 not enough buffer - 3 not found - -1 unknown
  */
-int8_t read(struct FAT32DriverRequest request){
-
-}
+// int8_t read(struct FAT32DriverRequest request){
+//     return 0;
+// }
 
 /**
  * FAT32 write, write a file or folder to file system.
@@ -128,9 +139,9 @@ int8_t read(struct FAT32DriverRequest request){
  * @param request All attribute will be used for write, buffer_size == 0 then create a folder / directory
  * @return Error code: 0 success - 1 file/folder already exist - 2 invalid parent cluster - -1 unknown
  */
-int8_t write(struct FAT32DriverRequest request){
-
-}
+// int8_t write(struct FAT32DriverRequest request){
+//     return 0;
+// }
 
 
 /**
@@ -139,6 +150,6 @@ int8_t write(struct FAT32DriverRequest request){
  * @param request buf and buffer_size is unused
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
-int8_t delete(struct FAT32DriverRequest request){
-    
-}
+// int8_t delete(struct FAT32DriverRequest request){
+//     return 0;
+// }
