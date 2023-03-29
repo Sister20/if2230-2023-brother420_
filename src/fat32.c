@@ -222,13 +222,13 @@ int8_t write(struct FAT32DriverRequest request){
         write_clusters(new_dir.table, cluster, 1);
 
         cluster_table = 0;
-
+    
         // cari empty di dirtable
         while (driver_state.dir_table_buf.table[cluster_table].user_attribute == UATTR_NOT_EMPTY){
             cluster_table++; // Ini index
         }
         driver_state.dir_table_buf.table[cluster_table] = new_dir.table[0];
-        write_clusters(driver_state.dir_table_buf.table, 2,1);
+        write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
         
 
         
