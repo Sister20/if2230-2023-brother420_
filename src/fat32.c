@@ -239,7 +239,15 @@ int8_t write(struct FAT32DriverRequest request){
         if (total_cluster * CLUSTER_SIZE < request.buffer_size){
             total_cluster += 1;
         }
-
+        cluster_table = 0;
+        while (driver_state.dir_table_buf.table[cluster_table].user_attribute == UATTR_NOT_EMPTY){
+            cluster_table++; // Ini index
+        }
+        memcpy(driver_state.dir_table_buf.table[cluster_table].name, request.name, 8);
+        memcpy(driver_state.dir_table_buf.table[cluster_table].ext, request.ext, 3);
+        driver_state.dir_table_buf.table[cluster_table].attribute = 0;
+        driver_state.dir_table_buf.table[cluster_table].user_attribute = UATTR_NOT_EMPTY;
+        driver_state.dir_table_buf.table[cluster_table].cluster_low = cluster;
         for (uint32_t i = 0; i < total_cluster + 1; i++){
             
             cluster = 0;
@@ -253,18 +261,6 @@ int8_t write(struct FAT32DriverRequest request){
             while (driver_state.fat_table.cluster_map[clusterNext] != 0){
                 clusterNext++; // Ini index
             }
-            
-            cluster_table = 0;
-
-            while (driver_state.dir_table_buf.table[cluster_table].user_attribute == UATTR_NOT_EMPTY){
-                cluster_table++; // Ini index
-            }
-
-            
-            memcpy(driver_state.dir_table_buf.table[cluster_table].name, request.name, 8);
-            memcpy(driver_state.dir_table_buf.table[cluster_table].ext, request.ext, 3);
-            driver_state.dir_table_buf.table[cluster_table].attribute = 0;
-            driver_state.dir_table_buf.table[cluster_table].cluster_low = cluster;
 
             if (i < total_cluster - 1){
                 driver_state.fat_table.cluster_map[cluster] = clusterNext;
@@ -275,10 +271,8 @@ int8_t write(struct FAT32DriverRequest request){
             }
             
             write_clusters(request.buf + CLUSTER_SIZE * i, cluster, 1);
-            
             write_clusters(driver_state.fat_table.cluster_map,1,1);
         }
-        driver_state.dir_table_buf.table[cluster_table].user_attribute = UATTR_NOT_EMPTY;
         write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
         
     }
