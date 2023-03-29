@@ -48,13 +48,15 @@ void kernel_setup(void) {
     } ;
 
     write(request);  // Create folder "ikanaide"
+    request.parent_cluster_number = 3;
     memcpy(request.name, "kano1\0\0\0", 8);
     write(request);  // Create folder "kano1"
-    memcpy(request.name, "ikanaide", 8);
+    // memcpy(request.name, "ikanaide", 8);
     // delete(request); // Delete first folder, thus creating hole in FS
 
     memcpy(request.name, "daijoubu", 8);
     request.buffer_size = 5*CLUSTER_SIZE;
+    request.parent_cluster_number = 4;
     write(request);  // Create fragmented file "daijoubu"
 
     // struct ClusterBuffer readcbuf;
