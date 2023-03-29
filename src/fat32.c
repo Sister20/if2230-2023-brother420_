@@ -203,7 +203,7 @@ int8_t write(struct FAT32DriverRequest request){
     while (driver_state.fat_table.cluster_map[cluster] != 0){
         cluster++; // Ini index
     }
-    // Todo : Request wajib memberikan request.parent_cluster_number yang valid (cluster tersebut berisikan directory). 
+    // TODO : Request wajib memberikan request.parent_cluster_number yang valid (cluster tersebut berisikan directory). 
     
     for (int i = 0; i < 64; i++){
         if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
@@ -217,6 +217,17 @@ int8_t write(struct FAT32DriverRequest request){
 
         struct FAT32DirectoryTable new_dir = {0};
         init_directory_table(&new_dir, request.name, cluster);
+
+        write_clusters(new_dir.table, request.parent_cluster_number, 1);
+
+        cluster = 0;
+        
+        // cari empty
+        while (driver_state.dir_table_buf.table[cluster].user_attribute == UATTR_NOT_EMPTY){
+            cluster++; // Ini index
+        }
+
+        
 
     } else if (request.buffer_size > 0){
         struct FAT32DirectoryTable new_dir = {0};
