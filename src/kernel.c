@@ -64,7 +64,7 @@ void kernel_setup(void) {
 
     /* Folder BRO attached to ROOT */
     memcpy(request.name, "BRO\0\0\0\0\0", 8);
-    write(request);  // Create folder "ikatwo"
+    write(request);  // Create folder "BRO"
 
 
     /* Folder brother */
@@ -92,8 +92,8 @@ void kernel_setup(void) {
 
 
     /* Delete debug */
-    memcpy(request.name, "destroys", 8);
-    delete(request); // Delete first folder, thus creating hole in FS
+    // memcpy(request.name, "destroys", 8);
+    // delete(request); // Delete first folder, thus creating hole in FS
 
 
     /* File daijoubu attached to folder kanol */
@@ -110,7 +110,16 @@ void kernel_setup(void) {
     write(request);  // Create fragmented file "perusak"
 
 
+    /* File duplicate Folder BRO attached to ROOT */
+    request.buffer_size = 0;
+    request.parent_cluster_number = ROOT_CLUSTER_NUMBER;
+    memcpy(request.name, "BRO\0\0\0\0\0", 8);
+    memcpy(request.ext, "uwO", 3);
+    uint8_t test = write(request);  // Create folder "BRO"
+    test += 3; // Buat unused variable
+
     /* Reset request.buf */
+    memcpy(request.ext, "uwu", 3);
     for (uint32_t i = 0; i < 5; i++)
         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
             cbuf[i].buf[j] = '0';
