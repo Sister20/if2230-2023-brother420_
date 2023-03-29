@@ -59,17 +59,23 @@ void kernel_setup(void) {
     request.parent_cluster_number = 4;
     write(request);  // Create fragmented file "daijoubu"
 
-    // struct ClusterBuffer readcbuf;
-    // read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER+1, 1); 
-    // // If read properly, readcbuf should filled with 'a'
+    for (uint32_t i = 0; i < 5; i++)
+        for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+            cbuf[i].buf[j] = '0';
 
-    // request.buffer_size = CLUSTER_SIZE;
-    // int8_t debug01 = read(request);   // Failed read due not enough buffer size
-    // request.buffer_size = 5*CLUSTER_SIZE;
-    // int8_t debug02 = read(request);   // Success read on file "daijoubu"
+    request.buf = cbuf;
+
+    struct ClusterBuffer readcbuf;
+    read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER + 3, 1); 
+    // If read properly, readcbuf should filled with 'a'
+
+    request.buffer_size = CLUSTER_SIZE;
+    int8_t debug01 = read(request);   // Failed read due not enough buffer size
+    request.buffer_size = 5*CLUSTER_SIZE;
+    int8_t debug02 = read(request);   // Success read on file "daijoubu"
     
     while (TRUE) {
-    //    debug01 += debug02;
+       debug01 += debug02;
     }
 }
 

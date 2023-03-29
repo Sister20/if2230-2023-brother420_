@@ -260,7 +260,7 @@ int8_t write(struct FAT32DriverRequest request){
                 cluster_table++; // Ini index
             }
 
-            driver_state.dir_table_buf.table[cluster_table].user_attribute = UATTR_NOT_EMPTY;
+            
             memcpy(driver_state.dir_table_buf.table[cluster_table].name, request.name, 8);
             memcpy(driver_state.dir_table_buf.table[cluster_table].ext, request.ext, 3);
             driver_state.dir_table_buf.table[cluster_table].attribute = 0;
@@ -268,17 +268,18 @@ int8_t write(struct FAT32DriverRequest request){
 
             if (i < total_cluster - 1){
                 driver_state.fat_table.cluster_map[cluster] = clusterNext;
-                driver_state.dir_table_buf.table[cluster_table].filesize = 2048;
+                driver_state.dir_table_buf.table[cluster_table].filesize += 2048;
             } else {
                 driver_state.fat_table.cluster_map[cluster] = FAT32_FAT_END_OF_FILE;
-                driver_state.dir_table_buf.table[cluster_table].filesize = request.buffer_size - (CLUSTER_SIZE * i);
+                driver_state.dir_table_buf.table[cluster_table].filesize += request.buffer_size - (CLUSTER_SIZE * i);
             }
             
             write_clusters(request.buf + CLUSTER_SIZE * i, cluster, 1);
-            write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
+            
             write_clusters(driver_state.fat_table.cluster_map,1,1);
         }
-
+        driver_state.dir_table_buf.table[cluster_table].user_attribute = UATTR_NOT_EMPTY;
+        write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
         
     }
 
