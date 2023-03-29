@@ -91,9 +91,11 @@ void kernel_setup(void) {
     write(request);  // Create folder "kano1"
 
 
-    /* Delete debug */
+    /* Delete debug for folder destroys (should be success) */
     // memcpy(request.name, "destroys", 8);
-    // delete(request); // Delete first folder, thus creating hole in FS
+    // request.buffer_size = 0;
+    // request.parent_cluster_number = 2;
+    // delete(request);
 
 
     /* File daijoubu attached to folder kanol */
@@ -106,8 +108,23 @@ void kernel_setup(void) {
     /* File perusak attached to folder kanol */
     request.buf = cbufs;
     memcpy(request.name, "perusak-", 8);
-    request.buffer_size = 5*CLUSTER_SIZE + 3;
+    request.buffer_size = 5 * CLUSTER_SIZE + 3;
     write(request);  // Create fragmented file "perusak"
+
+
+    /* Delete debug for file perusak (should be success) */
+    // memcpy(request.name, "perusak-", 8);
+    // memcpy(request.ext, "uwu", 3);
+    // request.buffer_size = 6 * CLUSTER_SIZE;
+    // request.parent_cluster_number = 8;
+    // delete(request);
+
+
+    /* Delete debug for folder kanol (should be fail) */
+    // memcpy(request.name, "kanol", 8);
+    // request.buffer_size = 0;
+    // request.parent_cluster_number = 3;
+    // delete(request);
 
 
     /* File duplicate Folder BRO attached to ROOT */
@@ -117,6 +134,7 @@ void kernel_setup(void) {
     memcpy(request.ext, "uwO", 3);
     uint8_t test = write(request);  // Create folder "BRO"
     test += 3; // Buat unused variable
+
 
     /* Reset request.buf */
     memcpy(request.ext, "uwu", 3);
@@ -158,6 +176,7 @@ void kernel_setup(void) {
     while (TRUE) {
         keyboard_state_activate(); 
     }
+    
 }
 
 
