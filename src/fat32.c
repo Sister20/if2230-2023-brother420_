@@ -39,21 +39,19 @@ uint32_t cluster_to_lba(uint32_t cluster){
  * @param parent_dir_cluster Parent directory cluster number
  */
 void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster){
-    dir_table->table[0].name[0] = '.';
+    // dir_table->table[0].name[0] = '.';
     dir_table->table[0].cluster_high = (uint16_t)(parent_dir_cluster >> 16);
     dir_table->table[0].cluster_low = (uint16_t)(parent_dir_cluster & 0xFFFF);
-
-    dir_table->table[1].name[0] = '.';
-    dir_table->table[1].name[1] = '.';
-    dir_table->table[1].cluster_high = (uint16_t)(parent_dir_cluster >> 16);
-    dir_table->table[1].cluster_low = (uint16_t)(parent_dir_cluster & 0xFFFF);
-
     for (uint8_t i = 0; i < 8; i++){
-        dir_table->table[2].name[i] = name[i];
+        dir_table->table[0].name[i] = name[i];
     }
 
-    dir_table->table[2].cluster_high = 0;
-    dir_table->table[2].cluster_low = 2;
+    // dir_table->table[1].name[0] = '.';
+    // dir_table->table[1].name[1] = '.';
+    // dir_table->table[1].cluster_high = (uint16_t)(parent_dir_cluster >> 16);
+    // dir_table->table[1].cluster_low = (uint16_t)(parent_dir_cluster & 0xFFFF);
+    // dir_table->table[2].cluster_high = 0;
+    // dir_table->table[2].cluster_low = 2;
 }
 
 /**
@@ -85,6 +83,8 @@ void create_fat32(void){
     
     struct  FAT32DirectoryTable root_dir_table = {0};
     init_directory_table(&root_dir_table, "ROOT", 2);
+    driver_state.dir_table_buf.table[0] = root_dir_table.table[0];
+    write_clusters(driver_state.dir_table_buf.table, 2, 1);
     write_clusters(&root_dir_table.table, 2, 1);
     
 }
@@ -200,6 +200,7 @@ int8_t write(struct FAT32DriverRequest request){
     read_clusters(&driver_state.fat_table, 1, 1);
     uint32_t cluster = 0;
     uint32_t clusterNext = 0;
+    uint32_t cluster_table = 0;
     while (driver_state.fat_table.cluster_map[cluster] != 0){
         cluster++; // Ini index
     }
@@ -217,15 +218,18 @@ int8_t write(struct FAT32DriverRequest request){
 
         struct FAT32DirectoryTable new_dir = {0};
         init_directory_table(&new_dir, request.name, cluster);
-
-        write_clusters(new_dir.table, request.parent_cluster_number, 1);
-
-        cluster = 0;
         
-        // cari empty
-        while (driver_state.dir_table_buf.table[cluster].user_attribute == UATTR_NOT_EMPTY){
-            cluster++; // Ini index
+        write_clusters(new_dir.table, cluster, 1);
+
+        cluster_table = 0;
+
+        // cari empty di dirtable
+        while (driver_state.dir_table_buf.table[cluster_table].user_attribute == UATTR_NOT_EMPTY){
+            cluster_table++; // Ini index
         }
+        driver_state.dir_table_buf.table[cluster_table] = new_dir.table[0];
+        write_clusters(driver_state.dir_table_buf.table, 2,1);
+        
 
         
 
