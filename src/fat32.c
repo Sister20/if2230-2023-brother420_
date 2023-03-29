@@ -303,25 +303,36 @@ int8_t write(struct FAT32DriverRequest request){
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
 int8_t delete(struct FAT32DriverRequest request){
-    struct FAT32DirectoryEntry temp_ent;
-    struct FAT32DirectoryTable temp_tab;
+    struct FAT32DirectoryEntry temp_ent = {0};
+    struct FAT32DirectoryTable temp_tab = {0};
     uint32_t location = 0;
     uint16_t cluster_temp = 0;
     bool flag = 0;
     read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
     read_clusters(&driver_state.fat_table, 1, 1);
-    read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
+    read_clusters(&temp_tab, request.parent_cluster_number, 1);
     if (request.buffer_size == 0){
         for (int i = 1; i < 64; i++){
-            if (driver_state.dir_table_buf.table[i].user_attribute == UATTR_NOT_EMPTY){
+            if (temp_tab.table[i].user_attribute == UATTR_NOT_EMPTY){
                 return 2;
             }
         }
         if (memcmp(request.name, "ROOT", 8)){
             return -1;
         }
+        for (int i = 0; i < 64; i++){
+            if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0){
+                location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
+                driver_state.dir_table_buf.table[i] = temp_ent;
+                driver_state.fat_table.cluster_map[location] = 0;
+                break;
+            }
+        }
+        write_clusters(driver_state.fat_table.cluster_map,1,1);
+        write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
+
+        return 0;
         // delete folder
-        
     } else {
     for (int i = 0; i < 64; i++){
         if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
@@ -338,6 +349,8 @@ int8_t delete(struct FAT32DriverRequest request){
                 driver_state.fat_table.cluster_map[cluster_temp] = 0;
                 }
             } while (!flag);
+            write_clusters(driver_state.fat_table.cluster_map,1,1);
+            write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
             return 0;
         }
     }
