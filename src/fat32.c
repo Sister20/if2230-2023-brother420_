@@ -7,6 +7,7 @@
 // static struct FAT32DirectoryEntry root_dir_entry;
 // static struct FAT32DirectoryTable root_dir_table;
 struct FAT32DriverState driver_state;
+
 // static struct FAT32DriverRequest driver_request;
 
 const uint8_t fs_signature[BLOCK_SIZE] = {
@@ -308,26 +309,36 @@ int8_t delete(struct FAT32DriverRequest request){
     uint32_t location = 0;
     uint16_t cluster_temp = 0;
     bool flag = 0;
+    int index = 0;
     read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
     read_clusters(&driver_state.fat_table, 1, 1);
-    read_clusters(&temp_tab, request.parent_cluster_number, 1);
+    temp_tab = driver_state.dir_table_buf;
     if (request.buffer_size == 0){
+        for (int i = 0; i < 64; i++){
+            if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0){
+                location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
+                index = i;
+                break;
+            }
+        }
+        read_clusters(&temp_tab.table, location, 1);
         for (int i = 1; i < 64; i++){
             if (temp_tab.table[i].user_attribute == UATTR_NOT_EMPTY){
                 return 2;
             }
         }
-        if (memcmp(request.name, "ROOT", 8)){
+        if (memcmp(request.name, "ROOT", 8) == 0){
             return -1;
         }
-        for (int i = 0; i < 64; i++){
-            if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0){
-                location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
-                driver_state.dir_table_buf.table[i] = temp_ent;
-                driver_state.fat_table.cluster_map[location] = 0;
-                break;
-            }
-        }
+        driver_state.dir_table_buf.table[index] = temp_ent;
+        driver_state.fat_table.cluster_map[location] = 0;
+        // for (int i = 0; i < 64; i++){
+        //     if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0){
+        //         location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
+                
+        //         break;
+        //     }
+        // }
         write_clusters(driver_state.fat_table.cluster_map,1,1);
         write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
 
