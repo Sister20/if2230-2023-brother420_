@@ -45,6 +45,8 @@ void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uin
     for (uint8_t i = 0; i < 8; i++){
         dir_table->table[0].name[i] = name[i];
     }
+    dir_table->table[0].user_attribute = UATTR_NOT_EMPTY;
+    
 
     // dir_table->table[1].name[0] = '.';
     // dir_table->table[1].name[1] = '.';
@@ -83,8 +85,6 @@ void create_fat32(void){
     
     struct  FAT32DirectoryTable root_dir_table = {0};
     init_directory_table(&root_dir_table, "ROOT", 2);
-    driver_state.dir_table_buf.table[0] = root_dir_table.table[0];
-    write_clusters(driver_state.dir_table_buf.table, 2, 1);
     write_clusters(&root_dir_table.table, 2, 1);
     
 }
