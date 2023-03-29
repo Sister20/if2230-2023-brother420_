@@ -13,32 +13,42 @@
 
 void write_splash_screen3();
 
-// void kernel_setup(void) {
-//     enter_protected_mode(&_gdt_gdtr);
-//     pic_remap();
-//     initialize_idt();
-//     framebuffer_clear();
-//     framebuffer_set_cursor(0,0);
-//     write_blocks(fs_signature, 0, 1);
-// }
-
 void kernel_setup(void) {
+
+    /* Enter protected mode */
     enter_protected_mode(&_gdt_gdtr);
+
+
+    /* Remap PIC */
     pic_remap();
-    activate_keyboard_interrupt();
     initialize_idt();
-    // activate_keyboard_interrupt();
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
     initialize_filesystem_fat32();
-    // while (TRUE)
-    //     keyboard_state_activate();
 
+
+    /* Initialize keyboard */
+    activate_keyboard_interrupt();
+
+
+    /* Initialize cbuf for debugging */
     struct ClusterBuffer cbuf[5];
     for (uint32_t i = 0; i < 5; i++)
         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
             cbuf[i].buf[j] = i + 'a';
 
+
+    /* Initialize cbufs for debugging */
+    struct ClusterBuffer cbufs[6];
+    for (uint32_t i = 0; i < 5; i++)
+        for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+            cbufs[i].buf[j] = i + '1';
+    cbufs[5].buf[0] = 'E';
+    cbufs[5].buf[1] = 'N';
+    cbufs[5].buf[2] = 'D';
+
+
+    /* Initialize request for debugging */
     struct FAT32DriverRequest request = {
         .buf                   = cbuf,
         .name                  = "ikanaide",
@@ -47,35 +57,74 @@ void kernel_setup(void) {
         .buffer_size           = 0,
     } ;
 
+
+    /* Folder ikanaide attached to ROOT */
     write(request);  // Create folder "ikanaide"
+
+
+    /* Folder kano1 attached to folder ikanaide */
     request.parent_cluster_number = 3;
     memcpy(request.name, "kano1\0\0\0", 8);
     write(request);  // Create folder "kano1"
+
+
+    /* Delete debug */
     // memcpy(request.name, "ikanaide", 8);
     // delete(request); // Delete first folder, thus creating hole in FS
 
+
+    /* File daijoubu attached to folder kanol */
     memcpy(request.name, "daijoubu", 8);
     request.buffer_size = 5*CLUSTER_SIZE;
     request.parent_cluster_number = 4;
     write(request);  // Create fragmented file "daijoubu"
 
+
+    /* File perusak attached to folder kanol */
+    request.buf = cbufs;
+    memcpy(request.name, "perusak", 8);
+    request.buffer_size = 5*CLUSTER_SIZE + 3;
+    write(request);  // Create fragmented file "perusak"
+
+
+    /* Reset request.buf */
     for (uint32_t i = 0; i < 5; i++)
         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
             cbuf[i].buf[j] = '0';
+    cbufs[5].buf[0] = 'E';
+    cbufs[5].buf[1] = 'N';
+    cbufs[5].buf[2] = 'D';
+    request.buf = cbufs;
 
-    request.buf = cbuf;
 
+    /* Read file perusak */
     struct ClusterBuffer readcbuf;
-    read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER + 3, 1); 
+    read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER + 10, 1); 
     // If read properly, readcbuf should filled with 'a'
 
+
+    /* Test read FAIL due not enough buffer size */
+    request.parent_cluster_number = 4;
     request.buffer_size = CLUSTER_SIZE;
     int8_t debug01 = read(request);   // Failed read due not enough buffer size
+
+
+    /* Test read FAIL due not valid parent_cluster */
+    request.parent_cluster_number = 20;
+    request.buffer_size = CLUSTER_SIZE;
+    int8_t debug03 = read(request);   // Failed read due not valid parent_cluster
+    
+
+    /* Test read SUCCESS */
     request.buffer_size = 5*CLUSTER_SIZE;
     int8_t debug02 = read(request);   // Success read on file "daijoubu"
     
+
+    /* Buat unused variable saja */
+    write_splash_screen3();
     while (TRUE) {
-       debug01 += debug02;
+        keyboard_state_activate();
+        debug01 += debug02 + debug03;
     }
 }
 
