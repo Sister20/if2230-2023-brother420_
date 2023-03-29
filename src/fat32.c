@@ -198,13 +198,15 @@ int8_t read(struct FAT32DriverRequest request){
 int8_t write(struct FAT32DriverRequest request){
     read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
     read_clusters(&driver_state.fat_table, 1, 1);
+    if (driver_state.fat_table.cluster_map[request.parent_cluster_number] != FAT32_FAT_END_OF_FILE){
+        return 2;
+    }
     uint16_t cluster = 0;
     uint16_t clusterNext = 0;
     uint16_t cluster_table = 0;
     while (driver_state.fat_table.cluster_map[cluster] != 0){
         cluster++; // Ini index
     }
-    // TODO : Request wajib memberikan request.parent_cluster_number yang valid (cluster tersebut berisikan directory). 
     
     for (int i = 0; i < 64; i++){
         if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
@@ -287,18 +289,18 @@ int8_t write(struct FAT32DriverRequest request){
  * @param request buf and buffer_size is unused
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
-// int8_t delete(struct FAT32DriverRequest request){
-//     read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
-//     read_clusters(&driver_state.fat_table, request.parent_cluster_number, 1);
-//     for (int i = 0; i < 64; i++){
-//         if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
-//             if (driver_state.dir_table_buf.table[i].attribute == 1){
-//                 return 2;
-//             }
-//             driver_state.dir_table_buf.table[i].name[0] = 0xE5;
-//             write_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
-//             break;
-//         }
-//     }
-//     return 0;
-// }
+int8_t delete(struct FAT32DriverRequest request){
+    read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
+    read_clusters(&driver_state.fat_table, request.parent_cluster_number, 1);
+    for (int i = 0; i < 64; i++){
+        if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0 && memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0){
+            if (driver_state.dir_table_buf.table[i].attribute == 1){
+                return 2;
+            }
+            driver_state.dir_table_buf.table[i].name[0] = 0xE5;
+            write_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
+            break;
+        }
+    }
+    return 1;
+}
