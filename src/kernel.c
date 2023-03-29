@@ -62,6 +62,29 @@ void kernel_setup(void) {
     write(request);  // Create folder "ikanaide"
 
 
+    /* Folder BRO attached to ROOT */
+    memcpy(request.name, "BRO\0\0\0\0\0", 8);
+    write(request);  // Create folder "ikatwo"
+
+
+    /* Folder brother */
+    request.parent_cluster_number = 4;
+    memcpy(request.name, "brother\0", 8);
+    write(request);  // Create folder "brother"
+
+
+    /* Folder b420 */
+    request.parent_cluster_number = 4;
+    memcpy(request.name, "b420---\0", 8);
+    write(request);  // Create folder "b420"
+
+
+    /* Folder destroys */
+    request.parent_cluster_number = 2;
+    memcpy(request.name, "destroys", 8);
+    write(request);  // Create folder "destroys"
+
+
     /* Folder kano1 attached to folder ikanaide */
     request.parent_cluster_number = 3;
     memcpy(request.name, "kano1\0\0\0", 8);
@@ -69,20 +92,20 @@ void kernel_setup(void) {
 
 
     /* Delete debug */
-    // memcpy(request.name, "ikanaide", 8);
-    // delete(request); // Delete first folder, thus creating hole in FS
+    memcpy(request.name, "destroys", 8);
+    delete(request); // Delete first folder, thus creating hole in FS
 
 
     /* File daijoubu attached to folder kanol */
     memcpy(request.name, "daijoubu", 8);
     request.buffer_size = 5*CLUSTER_SIZE;
-    request.parent_cluster_number = 4;
+    request.parent_cluster_number = 8;
     write(request);  // Create fragmented file "daijoubu"
 
 
     /* File perusak attached to folder kanol */
     request.buf = cbufs;
-    memcpy(request.name, "perusak", 8);
+    memcpy(request.name, "perusak-", 8);
     request.buffer_size = 5*CLUSTER_SIZE + 3;
     write(request);  // Create fragmented file "perusak"
 
@@ -121,10 +144,10 @@ void kernel_setup(void) {
     
 
     /* Buat unused variable saja */
+    debug01 += debug02 + debug03;
     write_splash_screen3();
     while (TRUE) {
-        keyboard_state_activate();
-        debug01 += debug02 + debug03;
+        keyboard_state_activate(); 
     }
 }
 
