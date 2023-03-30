@@ -13,6 +13,17 @@
 
 void write_splash_screen3();
 
+/* Struktur folder *
+ * ROOT
+ *  ikanaide
+ *      kanol
+ *          daijoubu
+ *          perusak
+ *  BRO
+ *      brother
+ *      b420
+ *  destroys
+ */
 void kernel_setup(void) {
 
     /* Enter protected mode */
@@ -173,8 +184,12 @@ void kernel_setup(void) {
     /* Buat unused variable saja */
     debug01 += debug02 + debug03;
     write_splash_screen3();
-    while (TRUE) {
+    while (TRUE && !altF4()) {
         keyboard_state_activate(); 
+        if (restoreSplashScreen()) {
+            write_splash_screen3();
+
+        }
     }
     
 }
