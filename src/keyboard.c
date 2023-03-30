@@ -8,6 +8,7 @@ static char antiDouble = -1;
 static int holding = 0;
 static char charHold = -1;
 static bool altFour = FALSE;
+static bool restoreSplash = FALSE;
 
 static int backspaceLine[25] = {
     0,0,0,0,0,
@@ -64,6 +65,10 @@ bool altF4(){
   return altFour;
 }
 
+bool restoreSplashScreen(){
+  return restoreSplash;
+}
+
 
 /* -- Keyboard Interrupt Service Routine -- */
 
@@ -90,6 +95,7 @@ void keyboard_isr(void) {
       while (is_keyboard_blocking()){
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
+        restoreSplash = FALSE;
 
         if (mapped_char != antiDouble){
           antiDouble = mapped_char;
@@ -209,7 +215,16 @@ void keyboard_isr(void) {
               keyboard_state.buffer_index = 0;
               row = 0;
             } 
-            
+
+            /* Ctrl Enter (restore splash screen)*/
+            else if (scancode == 0x1C){
+              framebuffer_set_cursor(0, 0);
+              keyboard_state.buffer_index = 0;
+              row = 0;
+              restoreSplash = TRUE;
+              keyboard_state_deactivate();
+            }
+
             /* Ctrl End */
             else if (scancode == 0x4F){
               framebuffer_set_cursor(24, 79);
