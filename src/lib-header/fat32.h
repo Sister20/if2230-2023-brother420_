@@ -57,6 +57,22 @@ struct FAT32FileAllocationTable {
     uint32_t cluster_map[CLUSTER_MAP_SIZE];
 } __attribute__((packed));
 
+
+
+struct Time {
+    uint8_t jam;
+    uint8_t menit;
+    uint8_t detik;
+} __attribute__((packed));
+
+struct Date {
+    uint8_t tanggal;
+    uint8_t bulan;
+    uint8_t tahun;
+} __attribute__((packed));
+
+
+
 /**
  * FAT32 standard 8.3 format - 32 bytes DirectoryEntry, Some detail can be found at:
  * https://en.wikipedia.org/wiki/Design_of_the_FAT_file_system#Directory_entry, and click show table.
@@ -84,13 +100,13 @@ struct FAT32DirectoryEntry {
     uint8_t  user_attribute;
 
     bool     undelete;
-    uint16_t create_time;
-    uint16_t create_date;
-    uint16_t access_date;
+    struct Time create_time;
+    struct Date create_date;
+    struct Date access_date;
     uint16_t cluster_high;
     
-    uint16_t modified_time;
-    uint16_t modified_date;
+    struct Time modified_time;
+    struct Date modified_date;
     uint16_t cluster_low;
     uint32_t filesize;
 } __attribute__((packed));

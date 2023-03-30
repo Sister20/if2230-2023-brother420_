@@ -2,6 +2,7 @@
 #define _PORTIO_H
 
 #include "stdtype.h"
+#include "fat32.h"
 
 /** out:
  *  Sends the given data to the given I/O port
@@ -22,5 +23,9 @@ uint8_t in(uint16_t port);
 uint16_t in16(uint16_t port);
 
 void out16(uint16_t port, uint16_t data);
+
+void get_time(struct Time *time, struct Date *date);
+
+uint8_t cmos_read(uint8_t reg);
 
 #endif
