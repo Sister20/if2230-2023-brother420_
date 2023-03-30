@@ -196,6 +196,19 @@ void keyboard_isr(void) {
             shifted = FALSE;
           } 
           
+        
+
+          /* Alt */
+          else if (scancode == 0x38){ // alt
+            do {
+              scancode = in(KEYBOARD_DATA_PORT);
+            } while (scancode == 0x38);
+             
+            /* alt f4 */ 
+            if (scancode == 0x3E){
+              altFour = TRUE;
+            } 
+          } 
           
           /* Home */
           else if (scancode == 0x47){
