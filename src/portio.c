@@ -44,20 +44,12 @@ uint16_t in16(uint16_t port) {
 }
 
 uint8_t cmos_read(uint8_t reg) {
-    __asm__ volatile (
-        "outb %0, %1" 
-        : 
-        : "a"(reg), "Nd"(0x70));
-    uint8_t data;
-    __asm__ volatile (
-        "inb %1, %0" 
-        : "=a"(data) 
-        : "Nd"(0x71));
-    return data;
+    // 0x70 port out, 0x71 port in
+    out(0x70,reg);
+    return in(0x71);
 }
 
 void get_time(struct Time *time, struct Date *date) {
-    // Read the current time from the CMOS registers
     uint8_t jam_cmos = cmos_read(0x04);
     uint8_t menit_cmos = cmos_read(0x02);
     uint8_t detik_cmos = cmos_read(0x00);
@@ -65,7 +57,7 @@ void get_time(struct Time *time, struct Date *date) {
     uint8_t bulan_cmos = cmos_read(0x08);
     uint8_t tahun_cmos = cmos_read(0x09);
 
-    // Convert BCD values to decimal
+    // Convert BCD
     time->jam = ((jam_cmos & 0x0F) + ((jam_cmos >> 4) * 10));
     time->menit = ((menit_cmos & 0x0F) + ((menit_cmos >> 4) * 10));
     time->detik = ((detik_cmos & 0x0F) + ((detik_cmos >> 4) * 10));
