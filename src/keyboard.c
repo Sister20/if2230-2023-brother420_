@@ -177,8 +177,26 @@ void keyboard_isr(void) {
             capslock = !capslock;
           } 
           
-          
+          /* Shift */
+          else if (scancode == 0x2A || scancode == 0x36){
+            do {
+              scancode = in(KEYBOARD_DATA_PORT);
+            } while (scancode == 0x2A || scancode == 0x36);
 
+            if (scancode == 0xAA || scancode == 0xB6){
+              continue;
+            } else {
+              shifted = TRUE;
+              mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
+            }
+          } 
+          
+          /* Release shift */
+          else if (scancode == 0xAA || scancode == 0xB6){ 
+            shifted = FALSE;
+          } 
+          
+    
           /* Normal Write */
           else if (mapped_char !=0){
             if (capslock && !shifted){ // hanya capslock
