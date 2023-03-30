@@ -196,7 +196,27 @@ void keyboard_isr(void) {
             shifted = FALSE;
           } 
           
-        
+          /* ctrl */
+          else if (scancode == 0x1D){  // ctrl
+            do {
+              scancode = in(KEYBOARD_DATA_PORT);
+            } while (scancode == 0x1D);
+            
+            scancode = in(KEYBOARD_DATA_PORT);
+            /* Ctrl Home */
+            if (scancode == 0x47){
+              framebuffer_set_cursor(0, 0);
+              keyboard_state.buffer_index = 0;
+              row = 0;
+            } 
+            
+            /* Ctrl End */
+            else if (scancode == 0x4F){
+              framebuffer_set_cursor(24, 79);
+              keyboard_state.buffer_index = 79;
+              row = 24;
+            }
+          } 
 
           /* Alt */
           else if (scancode == 0x38){ // alt
