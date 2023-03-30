@@ -196,7 +196,25 @@ void keyboard_isr(void) {
             shifted = FALSE;
           } 
           
-    
+          
+          /* Home */
+          else if (scancode == 0x47){
+            framebuffer_set_cursor(row, 0);
+            keyboard_state.buffer_index = 0;
+            do {
+              scancode = in(KEYBOARD_DATA_PORT);
+            } while (scancode == 0x47);
+          } 
+          
+          /* End */
+          else if (scancode == 0x4F){ 
+            framebuffer_set_cursor(row, 79);
+            keyboard_state.buffer_index = 79;
+            do {
+              scancode = in(KEYBOARD_DATA_PORT);
+            } while (scancode == 0x4F);
+          }
+
           /* Normal Write */
           else if (mapped_char !=0){
             if (capslock && !shifted){ // hanya capslock
