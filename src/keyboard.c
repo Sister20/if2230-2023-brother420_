@@ -7,7 +7,6 @@ static int row = 0;
 static char antiDouble = -1;
 static int holding = 0;
 static char charHold = -1;
-static bool isHolding = FALSE;
 static int backspaceLine[25] = {
     0,0,0,0,0,
     0,0,0,0,0,
@@ -74,7 +73,7 @@ bool is_keyboard_blocking(void){
  * after calling `keyboard_state_activate();`
  */
 void keyboard_isr(void) {
-    uint16_t holdWait = 0;
+    int16_t holdWait = 0;
     if (!keyboard_state.keyboard_input_on){
         keyboard_state.buffer_index = 0;
         framebuffer_write(21,11,'L',0xa,0);
@@ -138,26 +137,22 @@ void keyboard_isr(void) {
         } else {
           if (mapped_char == charHold){
             holding++;
-            isHolding = TRUE;
           } else { 
             charHold = mapped_char;
             holding = 0;
-            isHolding = FALSE;
           }
 
-          if (holding < 1){
-            holdWait = 8000;
-          } else if (holding < 150) {
-            holdWait = 9960;
+          if (holding == 0){
+            holdWait = -5000;
+          } else if (holding < 100) {
+            holdWait = 4200;
           } else {
-            holdWait = 9990;
+            holdWait = 5000;
           }
 
           antiDouble = -1;
-          if (isHolding || holding > -1){
-            for (int i = 0; i < 10000000 - (holdWait * 1000); i++){
-              io_wait();
-          }
+          for (int i = 0; i < 550000 - (holdWait * 100); i++){
+            io_wait();
           }
         }
       }
