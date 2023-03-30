@@ -16,6 +16,34 @@ const uint8_t fs_signature[BLOCK_SIZE] = {
     'L', 'a', 'b', ' ', 'S', 'i', 's', 't', 'e', 'r', ' ', 'I', 'T', 'B', ' ',  ' ',
     'M', 'a', 'd', 'e', ' ', 'w', 'i', 't', 'h', ' ', '<', '3', ' ', ' ', ' ',  ' ',
     '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '2', '0', '2', '3', '\n',
+    [BLOCK_SIZE-200] = 'F',
+    [BLOCK_SIZE-199] = 'A',
+    [BLOCK_SIZE-198] = 'C',
+    [BLOCK_SIZE-197] = 'T',
+    [BLOCK_SIZE-196] = '{',
+    [BLOCK_SIZE-195] = 'c',
+    [BLOCK_SIZE-194] = 'h',
+    [BLOCK_SIZE-193] = '1',
+    [BLOCK_SIZE-192] = '2',
+    [BLOCK_SIZE-191] = 'u',
+    [BLOCK_SIZE-190] = 'r',
+    [BLOCK_SIZE-189] = 'u',
+    [BLOCK_SIZE-188] = '_',
+    [BLOCK_SIZE-187] = '1',
+    [BLOCK_SIZE-186] = '5',
+    [BLOCK_SIZE-185] = '_',
+    [BLOCK_SIZE-184] = 'b',
+    [BLOCK_SIZE-183] = '3',
+    [BLOCK_SIZE-182] = '5',
+    [BLOCK_SIZE-181] = 't',
+    [BLOCK_SIZE-180] = '_',
+    [BLOCK_SIZE-179] = '6',
+    [BLOCK_SIZE-178] = '1',
+    [BLOCK_SIZE-177] = 'r',
+    [BLOCK_SIZE-176] = 'l',
+    [BLOCK_SIZE-175] = ':',
+    [BLOCK_SIZE-174] = 'D',
+    [BLOCK_SIZE-173] = '}',
     [BLOCK_SIZE-2] = 'O',
     [BLOCK_SIZE-1] = 'k',
 };
@@ -144,9 +172,23 @@ void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
  * @return Error code: 0 success - 1 not a folder - 2 not found - -1 unknown
  */
 
-// int8_t read_directory(struct FAT32DriverRequest request){
-
-// }
+int8_t read_directory(struct FAT32DriverRequest request){
+    uint32_t location;
+    read_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
+    for (int i = 0; i < 64; i++){
+        if (memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0){
+            if (request.buffer_size < driver_state.dir_table_buf.table[i].filesize) {
+                return 2;
+            } else if (driver_state.dir_table_buf.table[i].attribute == 1){
+                return 1;
+            }  
+            location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
+            read_clusters(request.buf + CLUSTER_SIZE, location, 1);
+            break;
+        }
+    }
+    return 0;
+}
 
 
 /**
@@ -208,8 +250,6 @@ int8_t write(struct FAT32DriverRequest request){
     while (driver_state.fat_table.cluster_map[cluster] != 0){
         cluster++; // Ini index
     }
-    
-    
     if (request.buffer_size == 0){
         
         for (int i = 0; i < 64; i++){
