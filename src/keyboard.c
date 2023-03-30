@@ -7,6 +7,8 @@ static int row = 0;
 static char antiDouble = -1;
 static int holding = 0;
 static char charHold = -1;
+static bool altFour = FALSE;
+
 static int backspaceLine[25] = {
     0,0,0,0,0,
     0,0,0,0,0,
@@ -29,7 +31,7 @@ const char keyboard_scancode_1_to_ascii_map[256] = {
       0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
       0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
       0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
-      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
       0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
       0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
 };
@@ -58,6 +60,10 @@ bool is_keyboard_blocking(void){
   return keyboard_state.keyboard_input_on;
 }
 
+bool altF4(){
+  return altFour;
+}
+
 
 /* -- Keyboard Interrupt Service Routine -- */
 
@@ -73,6 +79,8 @@ bool is_keyboard_blocking(void){
  * after calling `keyboard_state_activate();`
  */
 void keyboard_isr(void) {
+    bool capslock = FALSE;
+    bool shifted = FALSE;
     int16_t holdWait = 0;
     if (!keyboard_state.keyboard_input_on){
         keyboard_state.buffer_index = 0;
@@ -82,8 +90,11 @@ void keyboard_isr(void) {
       while (is_keyboard_blocking()){
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
+
         if (mapped_char != antiDouble){
           antiDouble = mapped_char;
+
+          /* Backspace */
           if (mapped_char == '\b') {
             if (keyboard_state.buffer_index) {
               keyboard_state.buffer_index--;
@@ -98,7 +109,10 @@ void keyboard_isr(void) {
             }
             framebuffer_write(row, keyboard_state.buffer_index, 0, 0x0c, 0);
             framebuffer_set_cursor(row, keyboard_state.buffer_index);
-          } else if (mapped_char=='\n') {
+          } 
+          
+          /* Enter (deactivate keyboard) */
+          else if (mapped_char=='\n') {
             keyboard_state.buffer_index=0;
             keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = 0;
             framebuffer_set_cursor(row + 1, keyboard_state.buffer_index);
@@ -109,8 +123,26 @@ void keyboard_isr(void) {
               row++;
             }
             keyboard_state_deactivate();
-          } else if (mapped_char !=0){
+          } 
+
+          
+          /* Normal Write */
+          else if (mapped_char !=0){
+            if (capslock && !shifted){ // hanya capslock
+              if (mapped_char >= 'a' && mapped_char <= 'z'){ 
+                mapped_char -= 32;
+              }
+            } else if (!capslock && shifted){ // hanya shift
+              if (mapped_char >= 'a' && mapped_char <= 'z'){
+                mapped_char -= 32;
+              }
+            } else if (capslock && shifted){ // capslock dan shift
+              if (mapped_char >= 'A' && mapped_char <= 'Z'){
+                mapped_char += 32;
+              }
+            }
             framebuffer_write(row, keyboard_state.buffer_index, mapped_char, 0x0c, 0);
+            
             if (keyboard_state.buffer_index >= 79){
               if (row >= 24) {
                 row = 24;
@@ -151,7 +183,7 @@ void keyboard_isr(void) {
           }
 
           antiDouble = -1;
-          for (int i = 0; i < 550000 - (holdWait * 100); i++){
+          for (int i = 0; i < 600000 - (holdWait * 100); i++){
             io_wait();
           }
         }
@@ -159,4 +191,3 @@ void keyboard_isr(void) {
     }
     pic_ack(IRQ_KEYBOARD);
 }
-
