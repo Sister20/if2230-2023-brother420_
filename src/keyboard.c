@@ -73,11 +73,13 @@ bool is_keyboard_blocking(void){
  * after calling `keyboard_state_activate();`
  */
 void keyboard_isr(void) {
+    int16_t holdWait = 0;
     if (!keyboard_state.keyboard_input_on){
         keyboard_state.buffer_index = 0;
         framebuffer_write(21,11,'L',0xa,0);
     }
     else {
+      while (is_keyboard_blocking()){
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
         if (mapped_char != antiDouble){
@@ -106,6 +108,7 @@ void keyboard_isr(void) {
             } else {
               row++;
             }
+            keyboard_state_deactivate();
           } else if (mapped_char !=0){
             framebuffer_write(row, keyboard_state.buffer_index, mapped_char, 0x0c, 0);
             if (keyboard_state.buffer_index >= 79){
@@ -138,11 +141,21 @@ void keyboard_isr(void) {
             charHold = mapped_char;
             holding = 0;
           }
-          antiDouble = -1;
-          for (int i = 0; i < 550000 - holding * 40000; i++)
-            io_wait();
-        }
 
+          if (holding == 0){
+            holdWait = -5000;
+          } else if (holding < 100) {
+            holdWait = 4200;
+          } else {
+            holdWait = 5000;
+          }
+
+          antiDouble = -1;
+          for (int i = 0; i < 550000 - (holdWait * 100); i++){
+            io_wait();
+          }
+        }
+      }
     }
     pic_ack(IRQ_KEYBOARD);
 }
