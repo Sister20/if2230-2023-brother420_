@@ -169,7 +169,15 @@ void keyboard_isr(void) {
             }
           } 
           
-         
+          /* Caps Lock */
+          else if (scancode == 0x3A){
+            do {
+              scancode = in(KEYBOARD_DATA_PORT);
+            } while (scancode != 0xBA);
+            capslock = !capslock;
+          } 
+          
+          
 
           /* Normal Write */
           else if (mapped_char !=0){
