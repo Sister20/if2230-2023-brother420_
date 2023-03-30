@@ -125,7 +125,52 @@ void keyboard_isr(void) {
             keyboard_state_deactivate();
           } 
 
+          /* Up Arrow (no holding) */
+          else if (scancode == 0x48){
+            if (row > 0){
+              row--;
+              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              do {
+                scancode = in(KEYBOARD_DATA_PORT);
+              } while (scancode != 0xc8);
+            }
+          } 
           
+          /* Down Arrow (no holding) */
+          else if (scancode == 0x50){
+            if (row < 24){
+              row++;
+              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              do {
+                scancode = in(KEYBOARD_DATA_PORT);
+              } while (scancode != 0xd0);
+            }
+          } 
+          
+          /* Left Arrow (no holding) */
+          else if (scancode == 0x4b){
+            if (keyboard_state.buffer_index > 0){
+              keyboard_state.buffer_index--;
+              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              do {
+                scancode = in(KEYBOARD_DATA_PORT);
+              } while (scancode != 0xcb);
+            }
+          } 
+          
+          /* Right Arrow (no holding) */
+          else if (scancode == 0x4d){
+            if (keyboard_state.buffer_index < 79){
+              keyboard_state.buffer_index++;
+              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              do {
+                scancode = in(KEYBOARD_DATA_PORT);
+              } while (scancode != 0xcd);
+            }
+          } 
+          
+         
+
           /* Normal Write */
           else if (mapped_char !=0){
             if (capslock && !shifted){ // hanya capslock
