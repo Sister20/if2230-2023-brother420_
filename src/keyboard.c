@@ -7,6 +7,7 @@ static int row = 0;
 static char antiDouble = -1;
 static int holding = 0;
 static char charHold = -1;
+static bool isHolding = FALSE;
 static int backspaceLine[25] = {
     0,0,0,0,0,
     0,0,0,0,0,
@@ -73,11 +74,13 @@ bool is_keyboard_blocking(void){
  * after calling `keyboard_state_activate();`
  */
 void keyboard_isr(void) {
+    uint16_t holdWait = 0;
     if (!keyboard_state.keyboard_input_on){
         keyboard_state.buffer_index = 0;
         framebuffer_write(21,11,'L',0xa,0);
     }
     else {
+      while (is_keyboard_blocking()){
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
         if (mapped_char != antiDouble){
@@ -106,6 +109,7 @@ void keyboard_isr(void) {
             } else {
               row++;
             }
+            keyboard_state_deactivate();
           } else if (mapped_char !=0){
             framebuffer_write(row, keyboard_state.buffer_index, mapped_char, 0x0c, 0);
             if (keyboard_state.buffer_index >= 79){
@@ -134,15 +138,29 @@ void keyboard_isr(void) {
         } else {
           if (mapped_char == charHold){
             holding++;
+            isHolding = TRUE;
           } else { 
             charHold = mapped_char;
             holding = 0;
+            isHolding = FALSE;
           }
-          antiDouble = -1;
-          for (int i = 0; i < 550000 - holding * 40000; i++)
-            io_wait();
-        }
 
+          if (holding < 1){
+            holdWait = 8000;
+          } else if (holding < 150) {
+            holdWait = 9960;
+          } else {
+            holdWait = 9990;
+          }
+
+          antiDouble = -1;
+          if (isHolding || holding > -1){
+            for (int i = 0; i < 10000000 - (holdWait * 1000); i++){
+              io_wait();
+          }
+          }
+        }
+      }
     }
     pic_ack(IRQ_KEYBOARD);
 }
