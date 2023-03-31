@@ -33,7 +33,22 @@ void update_page_directory_entry(void *physical_addr, void *virtual_addr, struct
 int8_t allocate_single_user_page_frame(void *virtual_addr) {
     // Using default QEMU config (128 MiB max memory)
     uint32_t last_physical_addr = (uint32_t) page_driver_state.last_available_physical_addr;
+    
+    struct PageDirectoryEntryFlag flag = {
+        .present_bit        = 1,
+        .write_bit          = 1,
+        .userOrSupervisor   = 1,
+        .use_pagesize_4_mb  = 1
+    };
 
+    if (last_physical_addr >= 32 * PAGE_FRAME_SIZE) {
+        return -1;
+    } else {
+        update_page_directory_entry((void*) last_physical_addr, virtual_addr, flag);
+        page_driver_state.last_available_physical_addr += PAGE_FRAME_SIZE;
+        return 0;
+    }
+    
     // TODO : Allocate Page Directory Entry with user privilege
     return -1;
 }
