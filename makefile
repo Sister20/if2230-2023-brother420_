@@ -49,3 +49,9 @@ iso: kernel
 	@echo Creating ISO image...
 	@$(ISO) $(IFLAGS) -o $(OUTPUT_FOLDER)/$(ISO_NAME).iso $(OUTPUT_FOLDER)/iso
 	@rm -r $(OUTPUT_FOLDER)/iso/
+
+inserter:
+	@$(CC) -Wno-builtin-declaration-mismatch \
+		$(SOURCE_FOLDER)/stdmem.c $(SOURCE_FOLDER)/fat32.c \
+		$(SOURCE_FOLDER)/external-inserter.c \
+		-o $(OUTPUT_FOLDER)/inserter
