@@ -55,7 +55,7 @@ struct PageDirectoryEntry {
     uint16_t global_page    : 1;
     uint16_t ignored        : 3;
     uint16_t PAT            : 1;
-    uint16_t lower_address  : 4; // Agak bingung di tabel intel manual, ini apa?
+    uint16_t lower_address  : 4;
     uint16_t reserved       : 5;
     uint16_t page_frame_4mb : 10; 
 
@@ -73,7 +73,7 @@ struct PageDirectoryEntry {
  */
 struct PageDirectory {
     // TODO : Implement
-    struct PageDirectoryEntry table[PAGE_ENTRY_COUNT];
+    struct PageDirectoryEntry table[PAGE_ENTRY_COUNT] __attribute__((aligned(0x1000)));
 } __attribute__((packed));
 
 /**
