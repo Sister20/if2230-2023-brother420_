@@ -9,9 +9,42 @@
 #include "lib-header/keyboard.h"
 #include "lib-header/interrupt.h"
 #include "lib-header/fat32.h"
+#include "lib-header/paging.h"
 
 
 void write_splash_screen3();
+
+void kernel_setup(void) {
+    enter_protected_mode(&_gdt_gdtr);
+    pic_remap();
+    initialize_idt();
+    activate_keyboard_interrupt();
+    framebuffer_clear();
+    framebuffer_set_cursor(0, 0);
+    initialize_filesystem_fat32();
+    // gdt_install_tss();
+    // set_tss_register();
+
+    // Allocate first 4 MiB virtual memory
+    allocate_single_user_page_frame((uint8_t*) 0);
+
+    // Write shell into memory (assuming shell is less than 1 MiB)
+    struct FAT32DriverRequest request = {
+        .buf                   = (uint8_t*) 0,
+        .name                  = "shell",
+        .ext                   = "\0\0\0",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 0x100000,
+    };
+    read(request);
+
+    // Set TSS $esp pointer and jump into shell 
+    // set_tss_kernel_current_stack();
+    // kernel_execute_user_program((uint8_t *) 0);
+
+    while (TRUE);
+}
+
 
 /* Struktur folder *
  * ROOT
@@ -24,175 +57,175 @@ void write_splash_screen3();
  *      b420
  *  destroys
  */
-void kernel_setup(void) {
+// void kernel_setup(void) {
 
-    /* Enter protected mode */
-    enter_protected_mode(&_gdt_gdtr);
-
-
-    /* Remap PIC */
-    pic_remap();
-    initialize_idt();
-    framebuffer_clear();
-    framebuffer_set_cursor(0, 0);
-    initialize_filesystem_fat32();
+//     /* Enter protected mode */
+//     enter_protected_mode(&_gdt_gdtr);
 
 
-    /* Initialize keyboard */
-    activate_keyboard_interrupt();
+//     /* Remap PIC */
+//     pic_remap();
+//     initialize_idt();
+//     framebuffer_clear();
+//     framebuffer_set_cursor(0, 0);
+//     initialize_filesystem_fat32();
 
 
-    /* Initialize cbuf for debugging */
-    struct ClusterBuffer cbuf[5];
-    for (uint32_t i = 0; i < 5; i++)
-        for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
-            cbuf[i].buf[j] = i + 'a';
+//     /* Initialize keyboard */
+//     activate_keyboard_interrupt();
 
 
-    /* Initialize cbufs for debugging */
-    struct ClusterBuffer cbufs[6];
-    for (uint32_t i = 0; i < 5; i++)
-        for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
-            cbufs[i].buf[j] = i + '1';
-    cbufs[5].buf[0] = 'E';
-    cbufs[5].buf[1] = 'N';
-    cbufs[5].buf[2] = 'D';
+//     /* Initialize cbuf for debugging */
+//     struct ClusterBuffer cbuf[5];
+//     for (uint32_t i = 0; i < 5; i++)
+//         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+//             cbuf[i].buf[j] = i + 'a';
 
 
-    /* Initialize request for debugging */
-    struct FAT32DriverRequest request = {
-        .buf                   = cbuf,
-        .name                  = "ikanaide",
-        .ext                   = "uwu",
-        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = 0,
-    } ;
+//     /* Initialize cbufs for debugging */
+//     struct ClusterBuffer cbufs[6];
+//     for (uint32_t i = 0; i < 5; i++)
+//         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+//             cbufs[i].buf[j] = i + '1';
+//     cbufs[5].buf[0] = 'E';
+//     cbufs[5].buf[1] = 'N';
+//     cbufs[5].buf[2] = 'D';
 
 
-    /* Folder ikanaide attached to ROOT */
-    write(request);  // Create folder "ikanaide"
+//     /* Initialize request for debugging */
+//     struct FAT32DriverRequest request = {
+//         .buf                   = cbuf,
+//         .name                  = "ikanaide",
+//         .ext                   = "uwu",
+//         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+//         .buffer_size           = 0,
+//     } ;
 
 
-    /* Folder BRO attached to ROOT */
-    memcpy(request.name, "BRO\0\0\0\0\0", 8);
-    write(request);  // Create folder "BRO"
+//     /* Folder ikanaide attached to ROOT */
+//     write(request);  // Create folder "ikanaide"
 
 
-    /* Folder brother */
-    request.parent_cluster_number = 4;
-    memcpy(request.name, "brother\0", 8);
-    write(request);  // Create folder "brother"
+//     /* Folder BRO attached to ROOT */
+//     memcpy(request.name, "BRO\0\0\0\0\0", 8);
+//     write(request);  // Create folder "BRO"
 
 
-    /* Folder b420 */
-    request.parent_cluster_number = 4;
-    memcpy(request.name, "b420---\0", 8);
-    write(request);  // Create folder "b420"
+//     /* Folder brother */
+//     request.parent_cluster_number = 4;
+//     memcpy(request.name, "brother\0", 8);
+//     write(request);  // Create folder "brother"
 
 
-    /* Folder destroys */
-    request.parent_cluster_number = 2;
-    memcpy(request.name, "destroys", 8);
-    write(request);  // Create folder "destroys"
+//     /* Folder b420 */
+//     request.parent_cluster_number = 4;
+//     memcpy(request.name, "b420---\0", 8);
+//     write(request);  // Create folder "b420"
 
 
-    /* Folder kano1 attached to folder ikanaide */
-    request.parent_cluster_number = 3;
-    memcpy(request.name, "kano1\0\0\0", 8);
-    write(request);  // Create folder "kano1"
+//     /* Folder destroys */
+//     request.parent_cluster_number = 2;
+//     memcpy(request.name, "destroys", 8);
+//     write(request);  // Create folder "destroys"
 
 
-    /* Delete debug for folder destroys (should be success) */
-    // memcpy(request.name, "destroys", 8);
-    // request.buffer_size = 0;
-    // request.parent_cluster_number = 2;
-    // delete(request);
+//     /* Folder kano1 attached to folder ikanaide */
+//     request.parent_cluster_number = 3;
+//     memcpy(request.name, "kano1\0\0\0", 8);
+//     write(request);  // Create folder "kano1"
 
 
-    /* File daijoubu attached to folder kanol */
-    memcpy(request.name, "daijoubu", 8);
-    request.buffer_size = 5*CLUSTER_SIZE;
-    request.parent_cluster_number = 8;
-    write(request);  // Create fragmented file "daijoubu"
+//     /* Delete debug for folder destroys (should be success) */
+//     // memcpy(request.name, "destroys", 8);
+//     // request.buffer_size = 0;
+//     // request.parent_cluster_number = 2;
+//     // delete(request);
 
 
-    /* File perusak attached to folder kanol */
-    request.buf = cbufs;
-    memcpy(request.name, "perusak-", 8);
-    request.buffer_size = 5 * CLUSTER_SIZE + 3;
-    write(request);  // Create fragmented file "perusak"
+//     /* File daijoubu attached to folder kanol */
+//     memcpy(request.name, "daijoubu", 8);
+//     request.buffer_size = 5*CLUSTER_SIZE;
+//     request.parent_cluster_number = 8;
+//     write(request);  // Create fragmented file "daijoubu"
 
 
-    /* Delete debug for file perusak (should be success) */
-    // memcpy(request.name, "perusak-", 8);
-    // memcpy(request.ext, "uwu", 3);
-    // request.buffer_size = 6 * CLUSTER_SIZE;
-    // request.parent_cluster_number = 8;
-    // delete(request);
+//     /* File perusak attached to folder kanol */
+//     request.buf = cbufs;
+//     memcpy(request.name, "perusak-", 8);
+//     request.buffer_size = 5 * CLUSTER_SIZE + 3;
+//     write(request);  // Create fragmented file "perusak"
 
 
-    /* Delete debug for folder kanol (should be fail) */
-    // memcpy(request.name, "kanol", 8);
-    // request.buffer_size = 0;
-    // request.parent_cluster_number = 3;
-    // delete(request);
+//     /* Delete debug for file perusak (should be success) */
+//     // memcpy(request.name, "perusak-", 8);
+//     // memcpy(request.ext, "uwu", 3);
+//     // request.buffer_size = 6 * CLUSTER_SIZE;
+//     // request.parent_cluster_number = 8;
+//     // delete(request);
 
 
-    /* File duplicate Folder BRO attached to ROOT */
-    request.buffer_size = 0;
-    request.parent_cluster_number = ROOT_CLUSTER_NUMBER;
-    memcpy(request.name, "BRO\0\0\0\0\0", 8);
-    memcpy(request.ext, "uwO", 3);
-    uint8_t test = write(request);  // Create folder "BRO"
-    test += 3; // Buat unused variable
+//     /* Delete debug for folder kanol (should be fail) */
+//     // memcpy(request.name, "kanol", 8);
+//     // request.buffer_size = 0;
+//     // request.parent_cluster_number = 3;
+//     // delete(request);
 
 
-    /* Reset request.buf */
-    memcpy(request.ext, "uwu", 3);
-    for (uint32_t i = 0; i < 5; i++)
-        for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
-            cbuf[i].buf[j] = '0';
-    cbufs[5].buf[0] = 'E';
-    cbufs[5].buf[1] = 'N';
-    cbufs[5].buf[2] = 'D';
-    request.buf = cbufs;
+//     /* File duplicate Folder BRO attached to ROOT */
+//     request.buffer_size = 0;
+//     request.parent_cluster_number = ROOT_CLUSTER_NUMBER;
+//     memcpy(request.name, "BRO\0\0\0\0\0", 8);
+//     memcpy(request.ext, "uwO", 3);
+//     uint8_t test = write(request);  // Create folder "BRO"
+//     test += 3; // Buat unused variable
 
 
-    /* Read file perusak */
-    struct ClusterBuffer readcbuf;
-    read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER + 10, 1); 
-    // If read properly, readcbuf should filled with 'a'
+//     /* Reset request.buf */
+//     memcpy(request.ext, "uwu", 3);
+//     for (uint32_t i = 0; i < 5; i++)
+//         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+//             cbuf[i].buf[j] = '0';
+//     cbufs[5].buf[0] = 'E';
+//     cbufs[5].buf[1] = 'N';
+//     cbufs[5].buf[2] = 'D';
+//     request.buf = cbufs;
 
 
-    /* Test read FAIL due not enough buffer size */
-    request.parent_cluster_number = 4;
-    request.buffer_size = CLUSTER_SIZE;
-    int8_t debug01 = read(request);   // Failed read due not enough buffer size
+//     /* Read file perusak */
+//     struct ClusterBuffer readcbuf;
+//     read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER + 10, 1); 
+//     // If read properly, readcbuf should filled with 'a'
 
 
-    /* Test read FAIL due not valid parent_cluster */
-    request.parent_cluster_number = 20;
-    request.buffer_size = CLUSTER_SIZE;
-    int8_t debug03 = read(request);   // Failed read due not valid parent_cluster
+//     /* Test read FAIL due not enough buffer size */
+//     request.parent_cluster_number = 4;
+//     request.buffer_size = CLUSTER_SIZE;
+//     int8_t debug01 = read(request);   // Failed read due not enough buffer size
+
+
+//     /* Test read FAIL due not valid parent_cluster */
+//     request.parent_cluster_number = 20;
+//     request.buffer_size = CLUSTER_SIZE;
+//     int8_t debug03 = read(request);   // Failed read due not valid parent_cluster
     
 
-    /* Test read SUCCESS */
-    request.buffer_size = 5*CLUSTER_SIZE;
-    int8_t debug02 = read(request);   // Success read on file "daijoubu"
+//     /* Test read SUCCESS */
+//     request.buffer_size = 5*CLUSTER_SIZE;
+//     int8_t debug02 = read(request);   // Success read on file "daijoubu"
     
 
-    /* Buat unused variable saja */
-    debug01 += debug02 + debug03;
-    write_splash_screen3();
-    while (TRUE && !altF4()) {
-        keyboard_state_activate(); 
-        if (restoreSplashScreen()) {
-            write_splash_screen3();
+//     /* Buat unused variable saja */
+//     debug01 += debug02 + debug03;
+//     write_splash_screen3();
+//     while (TRUE && !altF4()) {
+//         keyboard_state_activate(); 
+//         if (restoreSplashScreen()) {
+//             write_splash_screen3();
 
-        }
-    }
+//         }
+//     }
     
-}
+// }
 
 
 // void kernel_setup(void) {
