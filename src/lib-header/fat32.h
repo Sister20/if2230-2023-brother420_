@@ -105,10 +105,11 @@ struct FAT32DirectoryEntry {
     struct Date access_date;
     uint16_t cluster_high;
     
-    struct Time modified_time;
-    struct Date modified_date;
+    // struct Time modified_time;
+    // struct Date modified_date;
     uint16_t cluster_low;
     uint32_t filesize;
+    char last;
 } __attribute__((packed));
 
 // FAT32 DirectoryTable, containing directory entry table - @param table Table of DirectoryEntry that span within 1 cluster
