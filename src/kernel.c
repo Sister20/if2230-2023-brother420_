@@ -22,8 +22,8 @@ void kernel_setup(void) {
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
     initialize_filesystem_fat32();
-    // gdt_install_tss();
-    // set_tss_register();
+    gdt_install_tss();
+    set_tss_register();
 
     // Allocate first 4 MiB virtual memory
     allocate_single_user_page_frame((uint8_t*) 0);
@@ -39,9 +39,10 @@ void kernel_setup(void) {
     read(request);
 
     // Set TSS $esp pointer and jump into shell 
-    // set_tss_kernel_current_stack();
-    // kernel_execute_user_program((uint8_t *) 0);
-
+    set_tss_kernel_current_stack();
+    kernel_execute_user_program((uint8_t *) 0); // kayaknya di sini salah
+    int i = 0;
+    i++;
     while (TRUE);
 }
 
