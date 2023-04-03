@@ -132,7 +132,7 @@ void initialize_filesystem_fat32(void){
     if (is_empty_storage()){
         create_fat32();
     } else {
-        create_fat32();
+        // create_fat32();
         read_clusters(driver_state.fat_table.cluster_map, 1, 1);
     }
 }
@@ -284,8 +284,8 @@ int8_t write(struct FAT32DriverRequest request){
         }
         driver_state.dir_table_buf.table[cluster_table] = new_dir.table[0];
         get_time(&time, &date);
-        driver_state.dir_table_buf.table[0].modified_date = date;
-        driver_state.dir_table_buf.table[0].modified_time = time;
+        // driver_state.dir_table_buf.table[0].modified_date = date;
+        // driver_state.dir_table_buf.table[0].modified_time = time;
         write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
         
         
@@ -343,8 +343,8 @@ int8_t write(struct FAT32DriverRequest request){
         get_time(&time, &date);
         driver_state.dir_table_buf.table[cluster_table].create_date = date;
         driver_state.dir_table_buf.table[cluster_table].create_time = time;
-        driver_state.dir_table_buf.table[0].modified_date = date;
-        driver_state.dir_table_buf.table[0].modified_time = time;
+        // driver_state.dir_table_buf.table[0].modified_date = date;
+        // driver_state.dir_table_buf.table[0].modified_time = time;
         write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
         
     }
@@ -389,8 +389,8 @@ int8_t delete(struct FAT32DriverRequest request){
         driver_state.dir_table_buf.table[index] = temp_ent;
         driver_state.fat_table.cluster_map[location] = 0;
         get_time(&time, &date);
-        driver_state.dir_table_buf.table[0].modified_time = time;
-        driver_state.dir_table_buf.table[0].modified_date = date;
+        // driver_state.dir_table_buf.table[0].modified_time = time;
+        // driver_state.dir_table_buf.table[0].modified_date = date;
         write_clusters(driver_state.fat_table.cluster_map,1,1);
         write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
 
@@ -414,8 +414,8 @@ int8_t delete(struct FAT32DriverRequest request){
             } while (!flag);
             write_clusters(driver_state.fat_table.cluster_map,1,1);
             get_time(&time, &date);
-            driver_state.dir_table_buf.table[0].modified_time = time;
-            driver_state.dir_table_buf.table[0].modified_date = date;
+            // driver_state.dir_table_buf.table[0].modified_time = time;
+            // driver_state.dir_table_buf.table[0].modified_date = date;
             write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
             return 0;
         }
