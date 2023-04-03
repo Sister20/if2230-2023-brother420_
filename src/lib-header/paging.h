@@ -44,22 +44,25 @@ struct PageDirectoryEntryFlag {
  * 
  * @param flag            Contain 8-bit page directory entry flag
  * @param global_page     Is this page translation global (also cannot be flushed)
+ * 
  * @param ignored         Ignored
  * @param PAT             If the PAT is supported, indirectly determines the memory type used to access the 4-MByte page referenced by this entry 
- * @param lower_address   ??????????????????????????
+ * @param phys_address    ???????????????????????????????????????????????????????????????????????????????
  * @param reserved        Reserved tulisan di tabel itu must be 0
- * @param page_frame_4mb  Bits 31:22 of physical address of the 4-MByte page referenced by this entry
+ * @param lower_address   Bits 31:22 of physical address of the 4-MByte page referenced by this entry
  */
 struct PageDirectoryEntry {
     struct PageDirectoryEntryFlag flag;
     uint16_t global_page    : 1;
-    uint16_t ignored        : 3;
-    uint16_t PAT            : 1;
-    uint16_t lower_address  : 4;
-    uint16_t reserved       : 5;
-    uint16_t page_frame_4mb : 10; 
 
     // TODO : Continue, Use uint16_t + bitfield here, Do not use uint8_t
+    uint16_t ignored                : 3;
+    uint16_t PAT                    : 1;
+    uint16_t phys_address_paging    : 4;
+    uint16_t reserved               : 5;
+    uint16_t lower_address          : 10; 
+
+   
 } __attribute__((packed));
 
 /**

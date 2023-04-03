@@ -58,22 +58,6 @@ loader_virtual:
 
 
 section .text
-; More details: https://en.wikibooks.org/wiki/X86_Assembly/Protected_Mode
-enter_protected_mode:
-    ; Load GDT from GDTDescriptor
-    cli
-    mov  eax, [esp+4]
-    lgdt [eax]
-    
-    ; Set Protection Enable bit-flag in Control Register 0 (CR0)
-    ; Or in other words: Switch to protected mode
-    mov  eax, cr0
-    or   eax, 1
-    mov  cr0, eax
-
-    ; Far jump to update cs register
-    ; Warning: Invalid GDT will raise exception in any instruction below
-    jmp 0x8:flush_cs
 global kernel_execute_user_program            ; execute user program from kernel
 kernel_execute_user_program:
     mov  eax, 0x20 | 0x3
@@ -94,6 +78,22 @@ kernel_execute_user_program:
     push eax ; eip register to jump back
 
     iret
+; More details: https://en.wikibooks.org/wiki/X86_Assembly/Protected_Mode
+enter_protected_mode:
+    ; Load GDT from GDTDescriptor
+    cli
+    mov  eax, [esp+4]
+    lgdt [eax]
+    
+    ; Set Protection Enable bit-flag in Control Register 0 (CR0)
+    ; Or in other words: Switch to protected mode
+    mov  eax, cr0
+    or   eax, 1
+    mov  cr0, eax
+
+    ; Far jump to update cs register
+    ; Warning: Invalid GDT will raise exception in any instruction below
+    jmp 0x8:flush_cs
 flush_cs:
     ; Update all segment register
     mov ax, 10h
