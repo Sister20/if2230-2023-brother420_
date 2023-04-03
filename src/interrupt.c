@@ -6,7 +6,7 @@
 struct TSSEntry _interrupt_tss_entry = {
     .prev_tss = 0,
     .esp0 = 0,
-    .ss0 = 0,
+    .ss0 = 0x10,
 };
 
 

@@ -49,11 +49,11 @@ int8_t allocate_single_user_page_frame(void *virtual_addr) {
         .lower_address              = last_physical_addr >> 22 & 0x3FF
     };
     
-    if (last_physical_addr >= PAGE_FRAME_SIZE) {
+    if (last_physical_addr >= 32 * PAGE_FRAME_SIZE) {
         return -1;
     } else {
         // Update page directory entry
-        update_page_directory_entry(&last_physical_addr, virtual_addr, page_dir_entry.flag);
+        update_page_directory_entry((void *) last_physical_addr, virtual_addr, page_dir_entry.flag);
         page_driver_state.last_available_physical_addr += PAGE_FRAME_SIZE;
         return 0;
     }
