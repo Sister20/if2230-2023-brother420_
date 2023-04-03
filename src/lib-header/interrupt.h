@@ -59,6 +59,8 @@
 #define IRQ_PRIMARY_ATA  14
 #define IRQ_SECOND_ATA   15
 
+// Paging
+#define PAGE_FAULT       0xe
 
 /**
  * CPURegister, store CPU registers that can be used for interrupt handler / ISRs
