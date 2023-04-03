@@ -36,9 +36,21 @@ clean:
 kernel:
 	@$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/kernel_loader.s -o $(OUTPUT_FOLDER)/kernel_loader.o
 	@$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/intsetup.s -o $(OUTPUT_FOLDER)/intsetup.o
-	$(foreach file, $(wildcard $(SOURCE_FOLDER)/*.c), $(CC) $(CFLAGS) $(file) -o $(OUTPUT_FOLDER)/$(notdir $(file:.c=.o));)
-	@$(LIN) $(LFLAGS) bin/*.o -o $(OUTPUT_FOLDER)/kernel
-	@rm -f bin/*.o
+#	@$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/user-entry.s -o $(OUTPUT_FOLDER)/user-entry.o
+#	$(foreach file, $(wildcard $(SOURCE_FOLDER)/*.c), $(CC) $(CFLAGS) $(file) -o $(OUTPUT_FOLDER)/$(notdir $(file:.c=.o));)
+	@$(CC) $(CFLAGS) src/kernel.c 		-o bin/kernel.o
+	@$(CC) $(CFLAGS) src/gdt.c 			-o bin/gdt.o
+	@$(CC) $(CFLAGS) src/portio.c 		-o bin/portio.o
+	@$(CC) $(CFLAGS) src/stdmem.c 		-o bin/stdmem.o
+	@$(CC) $(CFLAGS) src/framebuffer.c 	-o bin/framebuffer.o
+	@$(CC) $(CFLAGS) src/idt.c 			-o bin/idt.o
+	@$(CC) $(CFLAGS) src/keyboard.c 	-o bin/keyboard.o
+	@$(CC) $(CFLAGS) src/interrupt.c 	-o bin/interrupt.o
+	@$(CC) $(CFLAGS) src/disk.c 		-o bin/disk.o
+	@$(CC) $(CFLAGS) src/fat32.c 		-o bin/fat32.o
+	@$(CC) $(CFLAGS) src/paging.c 		-o bin/paging.o
+#	@$(LIN) $(LFLAGS) bin/*.o 			-o $(OUTPUT_FOLDER)/kernel
+#	@rm -f bin/*.o
 
 
 iso: kernel

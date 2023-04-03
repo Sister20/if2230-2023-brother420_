@@ -8,6 +8,58 @@
  * Table entry : [{Null Descriptor}, {Kernel Code}, {Kernel Data (variable, etc)}, ...].
  */
 
+// struct GlobalDescriptorTable global_descriptor_table = {
+//     .table = {
+//         {
+//             .segment_low = 0,
+//             .base_low = 0,
+//             .base_mid = 0,
+//             .type_bit   = 0,
+//             .non_system = 0,
+//             .DPL = 0,
+//             .P   = 0,
+//             .segment_limit = 0,
+//             .AVL = 0,
+//             .L   = 0,
+//             .D_B   = 0,
+//             .G   = 0,
+//             .base_high = 0
+
+//         },
+//         {
+//             .segment_low = 0xFFFF,
+//             .base_low = 0,
+//             .base_mid = 0,
+//             .type_bit   = 0xA,
+//             .non_system = 1,
+//             .DPL = 0,
+//             .P   = 1,
+//             .segment_limit = 0xF,
+//             .AVL = 0,
+//             .L   = 0,
+//             .D_B   = 1,
+//             .G   = 1,
+//             .base_high = 0
+//             // TODO : Implement
+//         },
+//         {
+//             .segment_low = 0xFFFF,
+//             .base_low = 0,
+//             .base_mid = 0,
+//             .type_bit   = 0x2,
+//             .non_system = 1,
+//             .DPL = 0,
+//             .P   = 1,
+//             .segment_limit = 0xF,
+//             .AVL = 0,
+//             .L   = 0,
+//             .D_B   = 1,
+//             .G   = 1,
+//             .base_high = 0
+//             // TODO : Implement
+//         }
+//     }
+// };
 
 static struct GlobalDescriptorTable global_descriptor_table = {
     .table = {
@@ -24,7 +76,7 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .L                  = 0,
             .D_B                = 0,
             .G                  = 0,
-            .base_high          = 0
+            .base_high          = 0,
         },
         {/* TODO    : Kernel Code Descriptor */
             .segment_low        = 0xFFFF,
@@ -39,7 +91,7 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .L                  = 0,
             .D_B                = 1,
             .G                  = 1,
-            .base_high          = 0
+            .base_high          = 0,
         },
         {/* TODO    : Kernel Data Descriptor */
             .segment_low        = 0xFFFF,
@@ -54,7 +106,7 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .L                  = 0,
             .D_B                = 1,
             .G                  = 1,
-            .base_high          = 0
+            .base_high          = 0,
         },
         {/* TODO    : User   Code Descriptor */
             .segment_low        = 0xFFFF,
@@ -69,7 +121,7 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .L                  = 0,
             .D_B                = 1,
             .G                  = 1,
-            .base_high          = 0
+            .base_high          = 0,
         },
         {/* TODO    : User   Data Descriptor */
             .segment_low        = 0xFFFF,
@@ -84,7 +136,7 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .L                  = 0,
             .D_B                = 1,
             .G                  = 1,
-            .base_high          = 0
+            .base_high          = 0,
         },
         {
             .segment_limit      = (sizeof(struct TSSEntry) & (0xF << 16)) >> 16,
