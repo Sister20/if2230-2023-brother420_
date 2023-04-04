@@ -52,8 +52,10 @@ iso: kernel
 
 inserter:
 	@$(CC) -Wno-builtin-declaration-mismatch \
-		$(SOURCE_FOLDER)/stdmem.c $(SOURCE_FOLDER)/fat32.c \
-		$(SOURCE_FOLDER)/external-inserter.c \
+		$(SOURCE_FOLDER)/stdmem.c \
+		$(SOURCE_FOLDER)/portio.c \
+		$(SOURCE_FOLDER)/fat32.c \
+		$(SOURCE_FOLDER)/external/external-inserter.c \
 		-o $(OUTPUT_FOLDER)/inserter
 
 user-shell:
@@ -67,4 +69,5 @@ user-shell:
 
 insert-shell: inserter user-shell
 	@echo Inserting shell into root directory...
-# TODO : Insert shell into storage image
+	@cd $(OUTPUT_FOLDER); ./inserter shell 2 $(DISK_NAME).bin
+
