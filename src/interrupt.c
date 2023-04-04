@@ -2,11 +2,13 @@
 #include "lib-header/framebuffer.h"
 #include "lib-header/gdt.h"
 #include "lib-header/stdmem.h"
+#include "lib-header/idt.h"
 
 struct TSSEntry _interrupt_tss_entry = {
     .prev_tss = 0,
     .esp0 = 0,
-    .ss0 = 0x10,
+    .ss0 = GDT_KERNEL_DATA_SEGMENT_SELECTOR,
+    .unused_register = {0},
 };
 
 
