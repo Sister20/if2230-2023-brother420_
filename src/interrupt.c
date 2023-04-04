@@ -87,10 +87,12 @@ void set_tss_kernel_current_stack(void) {
 // };
 
 
-// TODO: implementasikan sendiri katanya
-// void puts(char *str, uint32_t len, uint32_t color) {
-
-// }
+// TODO: implement puts using framebuffer
+void puts(char *str, uint32_t len, uint32_t color) {
+    for (uint32_t i = 0; i < len; i++) {
+        framebuffer_write(0, i, str[i], color, 0);
+    }
+}
 
 
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
@@ -105,7 +107,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         get_keyboard_buffer(buf);
         memcpy((char *) cpu.ebx, buf, cpu.ecx);
     } else if (cpu.eax == 5) {
-        // puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
+        puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
     }
 }
 
