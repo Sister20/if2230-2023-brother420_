@@ -2,11 +2,13 @@
 #include "lib-header/framebuffer.h"
 #include "lib-header/gdt.h"
 #include "lib-header/stdmem.h"
+#include "lib-header/idt.h"
 
 struct TSSEntry _interrupt_tss_entry = {
     .prev_tss = 0,
     .esp0 = 0,
-    .ss0 = 0x10,
+    .ss0 = GDT_KERNEL_DATA_SEGMENT_SELECTOR,
+    .unused_register = {0},
 };
 
 
@@ -85,10 +87,12 @@ void set_tss_kernel_current_stack(void) {
 // };
 
 
-// TODO: implementasikan sendiri katanya
-// void puts(char *str, uint32_t len, uint32_t color) {
-
-// }
+// TODO: implement puts using framebuffer
+void puts(char *str, uint32_t len, uint32_t color) {
+    for (uint32_t i = 0; i < len; i++) {
+        framebuffer_write(0, i, str[i], color, 0);
+    }
+}
 
 
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
@@ -103,16 +107,16 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         get_keyboard_buffer(buf);
         memcpy((char *) cpu.ebx, buf, cpu.ecx);
     } else if (cpu.eax == 5) {
-        // puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
+        puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
     }
 }
 
 
 void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct InterruptStack info) {
     switch (int_number) {
-        case PAGE_FAULT:
-            __asm__("hlt");
-            break;
+        // case PAGE_FAULT:
+        //     __asm__("hlt");
+        //     break;
         case PIC1_OFFSET + IRQ_KEYBOARD:
             keyboard_isr();
             break;

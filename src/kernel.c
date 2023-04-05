@@ -19,33 +19,32 @@ void kernel_setup(void) {
     pic_remap();
     initialize_idt();
     activate_keyboard_interrupt();
-    keyboard_state_activate();
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
     initialize_filesystem_fat32();
     gdt_install_tss();
     set_tss_register();
-    framebuffer_write(0,0,sizeof(struct FAT32DirectoryEntry),0xe, 0);
+
     // Allocate first 4 MiB virtual memory
     allocate_single_user_page_frame((uint8_t*) 0);
 
-    // Write shell into memory (assuming shell is less than 1 MiB)
+    // Write shell into memory
     struct FAT32DriverRequest request = {
         .buf                   = (uint8_t*) 0,
-        .name                  = "shells",
+        .name                  = "shell",
         .ext                   = "\0\0\0",
         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = 0x1000,
+        .buffer_size           = 0x100000,
     };
-    write(request);
+    read(request);
 
     // Set TSS $esp pointer and jump into shell 
     set_tss_kernel_current_stack();
-    kernel_execute_user_program((uint8_t *) 0); // kayaknya di sini salah
-    int i = 0;
-    i++;
+    kernel_execute_user_program((uint8_t*) 0);
+
     while (TRUE);
 }
+
 
 
 /* Struktur folder *
