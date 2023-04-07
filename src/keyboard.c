@@ -278,7 +278,7 @@ void keyboard_isr(void) {
               framebuffer_write(24,2,mapped_char,0x0c,0);
 
               if (scancode == 0x0e){
-                for (int i = 3; i < 20; i == 6 ? i += 10 : i++){
+                for (uint8_t i = 3; i < 20; i == 6 ? i += 10 : i++){
                   framebuffer_write(i,0,'S',0x0c,0);
                   framebuffer_write(i,1,'Y',0x0c,0);
                   framebuffer_write(i,2,'S',0x0c,0);
@@ -306,55 +306,55 @@ void keyboard_isr(void) {
                   framebuffer_write(i,24,'.',0x0c,0);
                   framebuffer_write(i,25,'.',0x0c,0);
                 }
-                for (int i = 0; i < 80; i++){
+                for (uint8_t i = 0; i < 80; i++){
 
-                  for (int j = 9; j < 14; j++){
+                  for (uint8_t j = 9; j < 14; j++){
                     framebuffer_write(j, i, '/', 0x0c, 0);
                   }
 
-                  for (int j = 0; j < 120000; j++){
+                  for (uint32_t j = 0; j < 120000; j++){
                     io_wait();
                   }
 
-                  for (int j = 9; j < 14; j++){
+                  for (uint8_t j = 9; j < 14; j++){
                     framebuffer_write(j, i, '\\', 0x0c, 0x0);
                   }
 
-                  for (int j = 0; j < 120000; j++){
+                  for (uint32_t j = 0; j < 120000; j++){
                     io_wait();
                   }
 
-                  for (int j = 9; j < 14; j++){
+                  for (uint8_t j = 9; j < 14; j++){
                     framebuffer_write(j, i, '-', 0x0c, 0x0);
                   }
 
-                  for (int j = 0; j < 120000; j++){
+                  for (uint32_t j = 0; j < 120000; j++){
                     io_wait();
                   }
                   if (i != 0){
-                    for (int j = 9; j < 14; j++){
+                    for (uint8_t j = 9; j < 14; j++){
                       framebuffer_write(j, i-1, ' ', 0x0c, 0x0c);
                     }
                   }
                   if (i == 79){
-                    for (int j = 9; j < 14; j++){
+                    for (uint8_t j = 9; j < 14; j++){
                       framebuffer_write(j, i, ' ', 0x0c, 0x0c);
                     }
-                    for (int l = 0; l < 80; l++){
+                    for (uint8_t l = 0; l < 80; l++){
                       for (int m = 0; m < 25; m == 8 ? m += 7: m++){
                         framebuffer_write(m, l, ' ', 0x0, 0x0);
                       }
                     }
-                    for (int j = 0; j < 80; j++){
-                      for (int l = 8; l < 15; l++){
+                    for (uint8_t j = 0; j < 80; j++){
+                      for (uint8_t l = 8; l < 15; l++){
                         framebuffer_write(l, j, ' ', 0x09, 0x09);
                       }
 
-                      for (int k = 0; k < 70000; k++){
+                      for (uint32_t k = 0; k < 70000; k++){
                         io_wait();
                       }
                     }
-                    for (int j = 10; j < 13; j++){
+                    for (uint8_t j = 10; j < 13; j++){
                       framebuffer_write(j, 38, 'S', 0x0, 0x09);
                       framebuffer_write(j, 39, 'U', 0x0, 0x09);
                       framebuffer_write(j, 40, 'C', 0x0, 0x09);
@@ -364,16 +364,16 @@ void keyboard_isr(void) {
                       framebuffer_write(j, 44, 'S', 0x0, 0x09);
                     }
 
-                    for (int k = 0; k < 5000000; k++){
+                    for (uint32_t k = 0; k < 5000000; k++){
                       io_wait();
                     }
 
-                    for (int l = 0; l < 40; l++){
-                      for (int m = 0; m < 25; m++){
+                    for (uint8_t l = 0; l < 40; l++){
+                      for (uint8_t m = 0; m < 25; m++){
                         framebuffer_write(m, l, ' ', 0x0, 0x0);
                         framebuffer_write(m, 80-l, ' ', 0x0, 0x0);
                       }
-                      for (int k = 0; k < 70000; k++){
+                      for (uint32_t k = 0; k < 70000; k++){
                           io_wait();
                       }
                     }
