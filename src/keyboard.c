@@ -17,6 +17,7 @@ static int backspaceLine[25] = {
     0,0,0,0,0,
     0,0,0,0,0
 };
+
 const char keyboard_scancode_1_to_ascii_map[256] = {
       0, 0x1B, '1', '2', '3', '4', '5', '6',  '7', '8', '9',  '0',  '-', '=', '\b', '\t',
     'q',  'w', 'e', 'r', 't', 'y', 'u', 'i',  'o', 'p', '[',  ']', '\n',   0,  'a',  's',
@@ -231,6 +232,162 @@ void keyboard_isr(void) {
               keyboard_state.buffer_index = 79;
               row = 24;
             }
+
+            /* Ctrl Shift */
+            else if (scancode == 0x2A || scancode == 0x36){
+              do {
+                scancode = in(KEYBOARD_DATA_PORT);
+              } while (scancode == 0x2A || scancode == 0x36);
+
+              if (scancode == 0xAA || scancode == 0xB6){
+                continue;
+                /* Ctrl Shift Esc */
+              } else if (scancode == 0x01){
+                framebuffer_write(24,0,'N',0x0c,0);
+                framebuffer_write(24,1,'O',0x0c,0);
+                framebuffer_write(24,3,'T',0x0c,0);
+                framebuffer_write(24,4,'A',0x0c,0);
+                framebuffer_write(24,5,'S',0x0c,0);
+                framebuffer_write(24,6,'K',0x0c,0);
+                framebuffer_write(24,8,'M',0x0c,0);
+                framebuffer_write(24,9,'A',0x0c,0);
+                framebuffer_write(24,10,'N',0x0c,0);
+                framebuffer_write(24,11,'A',0x0c,0);
+                framebuffer_write(24,12,'G',0x0c,0);
+                framebuffer_write(24,13,'E',0x0c,0);
+                framebuffer_write(24,14,'R',0x0c,0);
+                framebuffer_write(24,16,'L',0x0d,0);
+                framebuffer_write(24,17,'O',0x0d,0);
+                framebuffer_write(24,18,'L',0x0d,0);
+                do {
+                  scancode = in(KEYBOARD_DATA_PORT);
+                } while (scancode == 0x01);
+
+                for (int i = 0; i < 19; i++){
+                  framebuffer_write(24, i, ' ', 0x0c, 0);
+                }
+              }
+            }
+
+            /* Ctrl Alt Backspace */
+            /* Karena Ctrl Alt Delete memengaruhi OS aslinya */
+            else if (scancode == 0x38){
+              do {
+                scancode = in(KEYBOARD_DATA_PORT);
+              } while (scancode == 0x38);
+              framebuffer_write(24,2,mapped_char,0x0c,0);
+
+              if (scancode == 0x0e){
+                for (uint8_t i = 3; i < 20; i == 6 ? i += 10 : i++){
+                  framebuffer_write(i,0,'S',0x0c,0);
+                  framebuffer_write(i,1,'Y',0x0c,0);
+                  framebuffer_write(i,2,'S',0x0c,0);
+                  framebuffer_write(i,3,'T',0x0c,0);
+                  framebuffer_write(i,4,'E',0x0c,0);
+                  framebuffer_write(i,5,'M',0x0c,0);
+                  framebuffer_write(i,6,' ',0x0c,0);
+                  framebuffer_write(i,7,'R',0x0c,0);
+                  framebuffer_write(i,8,'E',0x0c,0);
+                  framebuffer_write(i,9,'S',0x0c,0);
+                  framebuffer_write(i,10,'E',0x0c,0);
+                  framebuffer_write(i,11,'T',0x0c,0);
+                  framebuffer_write(i,12,'I',0x0c,0);
+                  framebuffer_write(i,13,'N',0x0c,0);
+                  framebuffer_write(i,14,'G',0x0c,0);
+                  framebuffer_write(i,15,' ',0x0c,0);
+                  framebuffer_write(i,16,'P',0x0c,0);
+                  framebuffer_write(i,17,'R',0x0c,0);
+                  framebuffer_write(i,18,'O',0x0c,0);
+                  framebuffer_write(i,19,'G',0x0c,0);
+                  framebuffer_write(i,20,'R',0x0c,0);
+                  framebuffer_write(i,21,'A',0x0c,0);
+                  framebuffer_write(i,22,'M',0x0c,0);
+                  framebuffer_write(i,23,'.',0x0c,0);
+                  framebuffer_write(i,24,'.',0x0c,0);
+                  framebuffer_write(i,25,'.',0x0c,0);
+                }
+                for (uint8_t i = 0; i < 80; i++){
+
+                  for (uint8_t j = 9; j < 14; j++){
+                    framebuffer_write(j, i, '/', 0x0c, 0);
+                  }
+
+                  for (uint32_t j = 0; j < 120000; j++){
+                    io_wait();
+                  }
+
+                  for (uint8_t j = 9; j < 14; j++){
+                    framebuffer_write(j, i, '\\', 0x0c, 0x0);
+                  }
+
+                  for (uint32_t j = 0; j < 120000; j++){
+                    io_wait();
+                  }
+
+                  for (uint8_t j = 9; j < 14; j++){
+                    framebuffer_write(j, i, '-', 0x0c, 0x0);
+                  }
+
+                  for (uint32_t j = 0; j < 120000; j++){
+                    io_wait();
+                  }
+                  if (i != 0){
+                    for (uint8_t j = 9; j < 14; j++){
+                      framebuffer_write(j, i-1, ' ', 0x0c, 0x0c);
+                    }
+                  }
+                  if (i == 79){
+                    for (uint8_t j = 9; j < 14; j++){
+                      framebuffer_write(j, i, ' ', 0x0c, 0x0c);
+                    }
+                    for (uint8_t l = 0; l < 80; l++){
+                      for (int m = 0; m < 25; m == 8 ? m += 7: m++){
+                        framebuffer_write(m, l, ' ', 0x0, 0x0);
+                      }
+                    }
+                    for (uint8_t j = 0; j < 80; j++){
+                      for (uint8_t l = 8; l < 15; l++){
+                        framebuffer_write(l, j, ' ', 0x09, 0x09);
+                      }
+
+                      for (uint32_t k = 0; k < 70000; k++){
+                        io_wait();
+                      }
+                    }
+                    for (uint8_t j = 10; j < 13; j++){
+                      framebuffer_write(j, 38, 'S', 0x0, 0x09);
+                      framebuffer_write(j, 39, 'U', 0x0, 0x09);
+                      framebuffer_write(j, 40, 'C', 0x0, 0x09);
+                      framebuffer_write(j, 41, 'C', 0x0, 0x09);
+                      framebuffer_write(j, 42, 'E', 0x0, 0x09);
+                      framebuffer_write(j, 43, 'S', 0x0, 0x09);
+                      framebuffer_write(j, 44, 'S', 0x0, 0x09);
+                    }
+
+                    for (uint32_t k = 0; k < 5000000; k++){
+                      io_wait();
+                    }
+
+                    for (uint8_t l = 0; l < 40; l++){
+                      for (uint8_t m = 0; m < 25; m++){
+                        framebuffer_write(m, l, ' ', 0x0, 0x0);
+                        framebuffer_write(m, 80-l, ' ', 0x0, 0x0);
+                      }
+                      for (uint32_t k = 0; k < 70000; k++){
+                          io_wait();
+                      }
+                    }
+              
+
+                    framebuffer_clear();
+                  }
+                }
+        
+              }
+
+            }
+
+            
           } 
 
           /* Alt */
