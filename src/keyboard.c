@@ -17,6 +17,7 @@ static int backspaceLine[25] = {
     0,0,0,0,0,
     0,0,0,0,0
 };
+
 const char keyboard_scancode_1_to_ascii_map[256] = {
       0, 0x1B, '1', '2', '3', '4', '5', '6',  '7', '8', '9',  '0',  '-', '=', '\b', '\t',
     'q',  'w', 'e', 'r', 't', 'y', 'u', 'i',  'o', 'p', '[',  ']', '\n',   0,  'a',  's',
@@ -230,6 +231,42 @@ void keyboard_isr(void) {
               framebuffer_set_cursor(24, 79);
               keyboard_state.buffer_index = 79;
               row = 24;
+            }
+
+            /* Ctrl Shift */
+            else if (scancode == 0x2A || scancode == 0x36){
+              do {
+                scancode = in(KEYBOARD_DATA_PORT);
+              } while (scancode == 0x2A || scancode == 0x36);
+
+              if (scancode == 0xAA || scancode == 0xB6){
+                continue;
+                /* Ctrl Shift Esc */
+              } else if (scancode == 0x01){
+                framebuffer_write(24,0,'N',0x0c,0);
+                framebuffer_write(24,1,'O',0x0c,0);
+                framebuffer_write(24,3,'T',0x0c,0);
+                framebuffer_write(24,4,'A',0x0c,0);
+                framebuffer_write(24,5,'S',0x0c,0);
+                framebuffer_write(24,6,'K',0x0c,0);
+                framebuffer_write(24,8,'M',0x0c,0);
+                framebuffer_write(24,9,'A',0x0c,0);
+                framebuffer_write(24,10,'N',0x0c,0);
+                framebuffer_write(24,11,'A',0x0c,0);
+                framebuffer_write(24,12,'G',0x0c,0);
+                framebuffer_write(24,13,'E',0x0c,0);
+                framebuffer_write(24,14,'R',0x0c,0);
+                framebuffer_write(24,16,'L',0x0d,0);
+                framebuffer_write(24,17,'O',0x0d,0);
+                framebuffer_write(24,18,'L',0x0d,0);
+                do {
+                  scancode = in(KEYBOARD_DATA_PORT);
+                } while (scancode == 0x01);
+                
+                for (int i = 0; i < 19; i++){
+                  framebuffer_write(24, i, ' ', 0x0c, 0);
+                }
+              }
             }
           } 
 
