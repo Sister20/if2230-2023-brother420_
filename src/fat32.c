@@ -8,8 +8,8 @@
 // static struct FAT32DirectoryEntry root_dir_entry;
 // static struct FAT32DirectoryTable root_dir_table;
 struct FAT32DriverState driver_state;
-struct Time time;
-struct Date date;
+// struct Time time;
+// struct Date date;
 
 // static struct FAT32DriverRequest driver_request;
 
@@ -79,8 +79,8 @@ void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uin
         dir_table->table[0].name[i] = name[i];
     }
     dir_table->table[0].user_attribute = UATTR_NOT_EMPTY;
-    dir_table->table[0].create_date = date;
-    dir_table->table[0].create_time = time;
+    // dir_table->table[0].create_date = date;
+    // dir_table->table[0].create_time = time;
     
 
     // dir_table->table[1].name[0] = '.';
@@ -190,7 +190,7 @@ int8_t read_directory(struct FAT32DriverRequest request){
             }  
             location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
             // get_time(&time, &date);
-            driver_state.dir_table_buf.table[i].access_date = date;
+            // driver_state.dir_table_buf.table[i].access_date = date;
             write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
             read_clusters(request.buf, location, 1);
             break;
@@ -232,7 +232,7 @@ int8_t read(struct FAT32DriverRequest request){
                     }
                 }
                 // get_time(&time, &date);
-                driver_state.dir_table_buf.table[i].access_date = date;
+                // driver_state.dir_table_buf.table[i].access_date = date;
                 write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
             }
             break;
@@ -259,6 +259,7 @@ int8_t write(struct FAT32DriverRequest request){
     uint16_t cluster = 0;
     uint16_t clusterNext = 0;
     uint16_t cluster_table = 0;
+    
     while (driver_state.fat_table.cluster_map[cluster] != 0){
         cluster++; // Ini index
     }
@@ -315,7 +316,7 @@ int8_t write(struct FAT32DriverRequest request){
         driver_state.dir_table_buf.table[cluster_table].attribute = 0;
         driver_state.dir_table_buf.table[cluster_table].user_attribute = UATTR_NOT_EMPTY;
         driver_state.dir_table_buf.table[cluster_table].cluster_low = cluster;
-        for (uint32_t i = 0; i < total_cluster + 1; i++){
+        for (uint32_t i = 0; i < total_cluster; i++){
             
             cluster = 0;
 
@@ -332,19 +333,28 @@ int8_t write(struct FAT32DriverRequest request){
             if (i < total_cluster - 1){
                 driver_state.fat_table.cluster_map[cluster] = clusterNext;
                 driver_state.dir_table_buf.table[cluster_table].filesize += 2048;
+                write_clusters(request.buf + CLUSTER_SIZE * i, cluster, 1); // rawan
+
             } else {
                 driver_state.fat_table.cluster_map[cluster] = FAT32_FAT_END_OF_FILE;
                 driver_state.dir_table_buf.table[cluster_table].filesize += request.buffer_size - (CLUSTER_SIZE * i);
+                uint8_t temp[request.buffer_size - (CLUSTER_SIZE * i)];
+                memcpy(temp, request.buf + CLUSTER_SIZE * i, request.buffer_size - (CLUSTER_SIZE * i));
+                write_clusters(temp, cluster, 1); // rawan
+                
             }
-            
-            write_clusters(request.buf + CLUSTER_SIZE * i, cluster, 1);
+
             write_clusters(driver_state.fat_table.cluster_map,1,1);
+            
+            
         }
         // get_time(&time, &date);
-        driver_state.dir_table_buf.table[cluster_table].create_date = date;
-        driver_state.dir_table_buf.table[cluster_table].create_time = time;
+        // driver_state.dir_table_buf.table[cluster_table].create_date = date;
+        // driver_state.dir_table_buf.table[cluster_table].create_time = time;
         // driver_state.dir_table_buf.table[0].modified_date = date;
         // driver_state.dir_table_buf.table[0].modified_time = time;
+        
+
         write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
         
     }
