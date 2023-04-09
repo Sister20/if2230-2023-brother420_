@@ -75,4 +75,9 @@ bool is_keyboard_blocking(void);
  */
 void keyboard_isr(void);
 
+/**
+ * Menambahkan row pada keyboard
+*/
+void addRow(int row);
+
 #endif

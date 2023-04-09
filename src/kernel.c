@@ -22,6 +22,24 @@ void kernel_setup(void) {
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
     initialize_filesystem_fat32();
+
+    struct ClusterBuffer cbuf[5];
+    for (uint32_t i = 0; i < 5; i++)
+        for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+            cbuf[i].buf[j] = i + 'a';
+
+    struct FAT32DriverRequest requester = {
+        .buf                   = cbuf,
+        .name                  = "ikanaide",
+        .ext                   = "\0\0\0",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 20,
+    };
+    for (uint32_t i = 0; i < 15; i++){
+        write(requester);
+        requester.name[0]++;
+    }
+
     gdt_install_tss();
     set_tss_register();
 
@@ -44,6 +62,97 @@ void kernel_setup(void) {
 
     while (TRUE);
 }
+
+
+// void kernel_setup(void){
+//     enter_protected_mode(&_gdt_gdtr);
+//     /* Remap PIC */
+//     pic_remap();
+//     initialize_idt();
+//     framebuffer_clear();
+//     framebuffer_set_cursor(0, 0);
+//     initialize_filesystem_fat32();
+
+//     /* Initialize keyboard */
+//     activate_keyboard_interrupt();
+
+//     /* Initialize cbuf for debugging */
+//     struct ClusterBuffer cbuf[5];
+//     for (uint32_t i = 0; i < 5; i++)
+//         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+//             cbuf[i].buf[j] = i + 'a';
+
+//     struct ClusterBuffer ebuf[5];
+//     for (uint32_t i = 0; i < 5; i++)
+//         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+//             ebuf[i].buf[j] = i + 'A';
+
+//     /* Initialize request for debugging */
+//     struct FAT32DriverRequest request = {
+//         .buf                   = cbuf,
+//         .name                  = "ikanaide",
+//         .ext                   = "\0\0\0",
+//         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+//         .buffer_size           = 20,
+//     };
+
+//     /* Folder ikanaide attached to ROOT */
+//     write(request);
+//     request.buf = ebuf;
+//     request.buffer_size = 19;
+//     read(request);  // Create folder "ikanaide"
+//     int i = 0;
+//     i++;
+//     while (TRUE);
+// }
+
+// void kernel_setup(void) {
+//     enter_protected_mode(&_gdt_gdtr);
+//     pic_remap();
+//     initialize_idt();
+//     activate_keyboard_interrupt();
+//     keyboard_state_activate();
+//     framebuffer_clear();
+//     framebuffer_set_cursor(0, 0);
+//     initialize_filesystem_fat32();
+//     gdt_install_tss();
+//     set_tss_register();
+
+//     // Allocate first 4 MiB virtual memory
+//     allocate_single_user_page_frame((uint8_t*) 0);
+
+//     // Write shell into memory
+//     struct FAT32DriverRequest request = {
+//         .buf                   = (uint8_t*) 0,
+//         .name                  = "shell",
+//         .ext                   = "\0\0\0",
+//         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+//         .buffer_size           = 0x100000,
+//     };
+//     read(request);
+
+//     struct ClusterBuffer cbuf[1];
+//     cbuf->buf[0] = 't';
+//     cbuf->buf[1] = 'e';
+//     cbuf->buf[2] = 's';
+//     cbuf->buf[3] = 't';
+//     cbuf->buf[4] = 'e';
+//     cbuf->buf[5] = 'r';
+
+//     request.buf = cbuf;
+//     memcpy(request.name, "ikanaide", 8);
+//     memcpy(request.ext, "\0\0\0", 3);
+//     request.parent_cluster_number = ROOT_CLUSTER_NUMBER;
+//     request.buffer_size = 6;
+
+//     write(request);
+
+//     // Set TSS $esp pointer and jump into shell 
+//     set_tss_kernel_current_stack();
+//     kernel_execute_user_program((uint8_t*) 0);
+
+//     while (TRUE);
+// }
 
 
 

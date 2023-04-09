@@ -18,12 +18,12 @@ int main(void) {
         .name                  = "ikanaide",
         .ext                   = "\0\0\0",
         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = CLUSTER_SIZE,
+        .buffer_size           = 20,
     };
     int32_t retcode;
     syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
     if (retcode == 0)
-        syscall(5, (uint32_t) "owo\n", 4, 0xF);
+        syscall(5, (uint32_t) "eswoss\n", 4, 0xF);
 
     char buf[16];
     while (TRUE) {
