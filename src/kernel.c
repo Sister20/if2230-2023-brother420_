@@ -36,9 +36,29 @@ void kernel_setup(void) {
         .buffer_size           = 20,
     };
     for (uint32_t i = 0; i < 15; i++){
-        write(requester);
         requester.name[0]++;
+        write(requester); 
     }
+    delete(requester);
+
+    struct ClusterBuffer ebuf = {
+        "Nandemonai to kuchi o tsugunda\n"
+        "Honto wa chotto ashi o tometakute\n"
+        "Dakedomo kimi wa hayaashi de sutto mae o iku kara\n"
+        "Boku wa sore o mitsumeteru\n"
+
+        "saishuubin kimi wa noru boku o oitette\n"
+        "Hashiridasu yukkuri to\n"
+        "Jimen ga zureteiku\n"
+        "Naicha dame naicha dame\n"
+        "Demo honto wa iitai yo\n"
+        "Ikanaide\n"
+    };
+
+    requester.name[0] = 'i';
+    requester.buffer_size = 0x120;
+    requester.buf = &ebuf;
+    write(requester);
 
     gdt_install_tss();
     set_tss_register();

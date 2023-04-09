@@ -103,6 +103,28 @@ void puts2(char *str, uint32_t len, uint32_t color) {
     }
 }
 
+void puts_long_text(char *str, uint32_t len, uint32_t color) {
+    uint8_t j = 0;
+    uint8_t k = 0;
+    for (uint32_t i = 0; i < len; i++) {
+        if (j == 80) {
+            row_shell++;
+            j = 0;
+            k++;
+        }
+        if (str[i] == '\n') {
+            row_shell++;
+            j = 0;
+            k++;
+            continue;
+        }
+        framebuffer_write(row_shell, j, str[i], color, 0);
+        j++;
+    }
+    addRow(k);
+}
+
+
 void template(void){
     puts("Brother420/", 11, 0x0a);
     framebuffer_write(row_shell, 11, ':', 0x01, 0);
@@ -296,6 +318,141 @@ void command_call_cp(char *cpCommandName){
 
 }
 
+
+void command_call_rm(char *rmCommandName){
+    struct FAT32DriverState state_driver;
+    read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+    read_clusters(&state_driver.fat_table, 1, 1);
+    bool isFolder = FALSE;
+
+    struct FAT32DriverRequest request = {
+        .parent_cluster_number  = current_directory_cluster,
+    };
+
+    uint8_t i = 0;
+    uint8_t j = 0;
+    while ((rmCommandName[i+3] != '.') && (rmCommandName[i+3] != ' ') && (i < 8)){
+        request.name[i] = rmCommandName[i+3];
+        i++;
+    }
+
+    if (rmCommandName[i+3] == ' '){
+        // Error karena tidak ada extensi
+        return;
+    }
+
+    if (rmCommandName[i+3] == '\0'){
+        // berarti folder
+        isFolder = TRUE;
+        for (int z = 0; z < 3; z++){
+            request.ext[z] = '\0';
+        }
+    }
+
+    if (i < 8){
+        for (int z = i; z < 8; z++){
+            request.name[z] = '\0';
+        }
+    }
+
+    if (!isFolder){
+        j = i+1;
+        while ((rmCommandName[j+3] != ' ') && (j-i-1 < 3)){
+            request.ext[j-i-1] = rmCommandName[j+3];
+            j++;
+        }
+
+        if (j-i-1 == 3 && rmCommandName[j+3] != '\0' && rmCommandName[j+3] != ' '){
+            // Error karena extensi terlalu panjang
+            return;
+        }
+
+        if (j-i-1 < 3){
+            for (int z = j-i-1; z < 3; z++){
+                request.ext[z] = '\0';
+            }
+        }
+    }
+
+    for (int m = 1; m < 64; m++){
+        if (state_driver.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+            if (memcmp(state_driver.dir_table_buf.table[m].name, request.name, 8) == 0 && 
+                memcmp(state_driver.dir_table_buf.table[m].ext, request.ext, 3) == 0){
+                // File ditemukan
+                request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
+                delete(request);
+                break;      
+            }
+        }
+    }
+}
+
+
+void command_call_cat(char *rmCommandName){
+    // asumsi file only
+
+    struct FAT32DriverState state_driver;
+    read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+    read_clusters(&state_driver.fat_table, 1, 1);
+
+    struct FAT32DriverRequest request = {
+        .parent_cluster_number  = current_directory_cluster,
+    };
+
+    uint8_t i = 0;
+    uint8_t j = 0;
+    while ((rmCommandName[i+4] != '.') && (rmCommandName[i+4] != ' ') && (i < 8)){
+        request.name[i] = rmCommandName[i+4];
+        i++;
+    }
+
+    if (rmCommandName[i+4] == ' '){
+        // Error karena tidak ada extensi
+        return;
+    }
+
+    if (i < 8){
+        for (int z = i; z < 8; z++){
+            request.name[z] = '\0';
+        }
+    }
+
+    j = i+1;
+    while ((rmCommandName[j+4] != ' ') && (j-i-1 < 3)){
+        request.ext[j-i-1] = rmCommandName[j+4];
+        j++;
+    }
+
+    if (j-i-1 == 4 && rmCommandName[j+4] != '\0' && rmCommandName[j+4] != ' '){
+        // Error karena extensi terlalu panjang
+        return;
+    }
+
+    if (j-i-1 < 3){
+        for (int z = j-i-1; z < 3; z++){
+            request.ext[z] = '\0';
+        }
+    }
+
+    for (int m = 1; m < 64; m++){
+        if (state_driver.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+            if (memcmp(state_driver.dir_table_buf.table[m].name, request.name, 8) == 0 && 
+                memcmp(state_driver.dir_table_buf.table[m].ext, request.ext, 3) == 0){
+                // File ditemukan
+                request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
+                read(request);
+                break;      
+            }
+        }
+    }
+
+    puts_long_text(request.buf, request.buffer_size, 0x0e);
+
+    framebuffer_write(23, 79, 'L', 0x0F, 0x00);
+
+}
+
+
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
@@ -334,6 +491,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             case 3:
                 // cat
                 framebuffer_write(0, 70, '3', 0x0f, 0);
+                command_call_cat((char *) cpu.ebx);
                 break;
             case 4:
                 // cp
@@ -343,6 +501,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             case 5:
                 // rm
                 framebuffer_write(0, 70, '5', 0x0f, 0);
+                command_call_rm((char *) cpu.ebx);
                 break;
             case 6:
                 // mv
