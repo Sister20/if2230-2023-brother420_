@@ -63,6 +63,11 @@ bool is_keyboard_blocking(void){
   return keyboard_state.keyboard_input_on;
 }
 
+// Add more row
+void addRow(int n){
+  row += n;
+}
+
 bool altF4(){
   return altFour;
 }

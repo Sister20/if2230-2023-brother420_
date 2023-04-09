@@ -5,6 +5,7 @@
 #include "lib-header/idt.h"
 
 uint8_t row_shell = 0;
+int current_directory_cluster = ROOT_CLUSTER_NUMBER;
 
 struct TSSEntry _interrupt_tss_entry = {
     .prev_tss = 0,
@@ -141,6 +142,39 @@ uint8_t getCommandInput(char *input, uint8_t len){
     return 255;
 }
 
+void puts_line(char *input, int row, int col, int length, int color){
+    for (int i = 0; i < length; i++){
+        framebuffer_write(row, col + i, input[i], color, 0);
+    }
+}
+
+
+void command_call_ls(void){
+    struct FAT32DriverState state_driver;
+    read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+    read_clusters(&state_driver.fat_table, 1, 1);
+    
+    int col = 0;
+    int row_add_needed = 1;
+
+    for (int i = 1; i < 64; i++){
+
+        if (state_driver.dir_table_buf.table[i].user_attribute == UATTR_NOT_EMPTY){
+            if (col == 5){
+                col = 0;
+                row_shell++;
+                row_add_needed++;
+            }
+            puts_line(state_driver.dir_table_buf.table[i].name, row_shell, col*16, 8, 0x0f);
+            col++;
+        }
+    }
+    row_shell++;
+
+    addRow(row_add_needed);
+
+}
+
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
@@ -169,6 +203,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             case 1:
                 // ls
                 framebuffer_write(0, 70, '1', 0x0f, 0);
+                command_call_ls();
                 break;
             case 2:
                 // mkdir
