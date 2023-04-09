@@ -4,6 +4,7 @@
 #include "lib-header/framebuffer.h"
 static struct KeyboardDriverState keyboard_state;
 static int row = 0;
+static int col = 0;
 static char antiDouble = -1;
 static int holding = 0;
 static char charHold = -1;
@@ -93,6 +94,8 @@ void keyboard_isr(void) {
         framebuffer_write(21,11,'L',0xa,0);
     }
     else {
+      keyboard_state.buffer_index = 0;
+      col = 14;
       while (is_keyboard_blocking()){
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
@@ -103,26 +106,26 @@ void keyboard_isr(void) {
 
           /* Backspace */
           if (mapped_char == '\b') {
-            if (keyboard_state.buffer_index) {
+            if (col) {
               keyboard_state.buffer_index--;
+              col--;
               backspaceLine[row]--;
-            } else if (keyboard_state.buffer_index == 0){
+            } else if (col == 0){
               if (row <= 0) {
                 row = 0;
               } else {
                 row--;
-                keyboard_state.buffer_index = backspaceLine[row];
+                col = backspaceLine[row];
               }
             }
-            framebuffer_write(row, keyboard_state.buffer_index, 0, 0x0c, 0);
-            framebuffer_set_cursor(row, keyboard_state.buffer_index);
+            framebuffer_write(row, col, 0, 0x0c, 0);
+            framebuffer_set_cursor(row, col);
           } 
           
           /* Enter (deactivate keyboard) */
           else if (mapped_char=='\n') {
             keyboard_state.buffer_index=0;
-            keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = 0;
-            framebuffer_set_cursor(row + 1, keyboard_state.buffer_index);
+            framebuffer_set_cursor(row + 1, col);
             mapped_char = 0;
             if (row >= 24) {
               row = 24;
@@ -136,7 +139,7 @@ void keyboard_isr(void) {
           else if (scancode == 0x48){
             if (row > 0){
               row--;
-              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              framebuffer_set_cursor(row, col);
               do {
                 scancode = in(KEYBOARD_DATA_PORT);
               } while (scancode != 0xc8);
@@ -147,7 +150,7 @@ void keyboard_isr(void) {
           else if (scancode == 0x50){
             if (row < 24){
               row++;
-              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              framebuffer_set_cursor(row, col);
               do {
                 scancode = in(KEYBOARD_DATA_PORT);
               } while (scancode != 0xd0);
@@ -156,9 +159,10 @@ void keyboard_isr(void) {
           
           /* Left Arrow (no holding) */
           else if (scancode == 0x4b){
-            if (keyboard_state.buffer_index > 0){
+            if (col > 0){
               keyboard_state.buffer_index--;
-              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              col--;
+              framebuffer_set_cursor(row, col);
               do {
                 scancode = in(KEYBOARD_DATA_PORT);
               } while (scancode != 0xcb);
@@ -167,9 +171,10 @@ void keyboard_isr(void) {
           
           /* Right Arrow (no holding) */
           else if (scancode == 0x4d){
-            if (keyboard_state.buffer_index < 79){
+            if (col < 79){
               keyboard_state.buffer_index++;
-              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              col++;
+              framebuffer_set_cursor(row, col);
               do {
                 scancode = in(KEYBOARD_DATA_PORT);
               } while (scancode != 0xcd);
@@ -214,6 +219,7 @@ void keyboard_isr(void) {
             if (scancode == 0x47){
               framebuffer_set_cursor(0, 0);
               keyboard_state.buffer_index = 0;
+              col = 0;
               row = 0;
             } 
 
@@ -221,6 +227,7 @@ void keyboard_isr(void) {
             else if (scancode == 0x1C){
               framebuffer_set_cursor(0, 0);
               keyboard_state.buffer_index = 0;
+              col = 0;
               row = 0;
               restoreSplash = TRUE;
               keyboard_state_deactivate();
@@ -229,7 +236,8 @@ void keyboard_isr(void) {
             /* Ctrl End */
             else if (scancode == 0x4F){
               framebuffer_set_cursor(24, 79);
-              keyboard_state.buffer_index = 79;
+              keyboard_state.buffer_index = 79; //z
+              col = 79;
               row = 24;
             }
 
@@ -405,7 +413,7 @@ void keyboard_isr(void) {
           /* Home */
           else if (scancode == 0x47){
             framebuffer_set_cursor(row, 0);
-            keyboard_state.buffer_index = 0;
+            col = 0;
             do {
               scancode = in(KEYBOARD_DATA_PORT);
             } while (scancode == 0x47);
@@ -414,7 +422,7 @@ void keyboard_isr(void) {
           /* End */
           else if (scancode == 0x4F){ 
             framebuffer_set_cursor(row, 79);
-            keyboard_state.buffer_index = 79;
+            col = 79;
             do {
               scancode = in(KEYBOARD_DATA_PORT);
             } while (scancode == 0x4F);
@@ -435,27 +443,34 @@ void keyboard_isr(void) {
                 mapped_char += 32;
               }
             }
-            framebuffer_write(row, keyboard_state.buffer_index, mapped_char, 0x0c, 0);
+
+            keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
+            // framebuffer_write(20, col, keyboard_state.keyboard_buffer[keyboard_state.buffer_index], 0x0c, 0);
+            keyboard_state.buffer_index++;
+            framebuffer_write(row, col, mapped_char, 0x0c, 0);
             
-            if (keyboard_state.buffer_index >= 79){
+            
+            if (col >= 79){
               if (row >= 24) {
                 row = 24;
               } else {
                 row++;
               }
-              keyboard_state.buffer_index = 0;
+              col = 0;
             } else {
-              keyboard_state.buffer_index++;
+              col++;
               backspaceLine[row]++;
-              keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
             }
-            if (keyboard_state.buffer_index >= 79 && row < 24){
+            
+            if (col >= 79 && row < 24){
               framebuffer_set_cursor(row + 1, 0);
             } else if (row >= 24){ 
               framebuffer_set_cursor(24, 0);
             } else {
-              framebuffer_set_cursor(row, keyboard_state.buffer_index);
+              framebuffer_set_cursor(row, col);
             }
+
+
           } else {
             
           }
