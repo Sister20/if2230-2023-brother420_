@@ -339,8 +339,11 @@ int8_t write(struct FAT32DriverRequest request){
             } else {
                 driver_state.fat_table.cluster_map[cluster] = FAT32_FAT_END_OF_FILE;
                 driver_state.dir_table_buf.table[cluster_table].filesize += request.buffer_size - (CLUSTER_SIZE * i);
-                uint8_t temp[request.buffer_size - (CLUSTER_SIZE * i)];
+                uint8_t temp[CLUSTER_SIZE];
                 memcpy(temp, request.buf + CLUSTER_SIZE * i, request.buffer_size - (CLUSTER_SIZE * i));
+                for (int j = request.buffer_size - (CLUSTER_SIZE * i); j < CLUSTER_SIZE; j++){
+                    temp[j] = 0;
+                }
                 write_clusters(temp, cluster, 1); // rawan
                 
             }
