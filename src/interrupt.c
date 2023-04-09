@@ -110,6 +110,37 @@ void template(void){
     row_shell++;
 }
 
+/**
+ * cd		- Mengganti current working directory (termasuk .. untuk naik)
+ * ls		- Menuliskan isi current working directory
+ * mkdir	- Membuat sebuah folder kosong baru
+ * cat		- Menuliskan sebuah file sebagai text file ke layar (Gunakan format LF newline)
+ * cp		- Mengcopy suatu file
+ * rm		- Menghapus suatu file atau folder kosong
+ * mv		- Memindah dan merename lokasi file/folder
+ * whereis	- Mencari file/folder dengan nama yang sama diseluruh file system
+
+ * @return 0 cd (spasi)
+ * @return 1 ls
+ * @return 2 mkdir (spasi)
+ * @return 3 cat (spasi)
+ * @return 4 cp (spasi)
+ * @return 5 rm (spasi)
+ * @return 6 mv (spasi)
+ * @return 7 whereis (spasi)
+*/
+uint8_t getCommandInput(char *input, uint8_t len){
+    char *command[] = {"cd ", "ls", "mkdir ", "cat ", "cp ", "rm ", "mv ", "whereis "};
+    uint8_t command_len[] = {3, 2, 6, 4, 3, 3, 3, 8};
+    for (uint8_t i = 0; i < 8; i++){
+        if (len >= command_len[i] && memcmp(input, command[i], command_len[i]) == 0){
+            return i;
+        }
+        framebuffer_write(23, i, input[i], 0x0f, 0);
+    }
+    return 255;
+}
+
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
@@ -128,6 +159,48 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
     } else if (cpu.eax == 5) {
         // ini berarti di-enter dari syscall 4
         
+        uint8_t command = getCommandInput((char *) cpu.ebx, cpu.ecx);
+        
+        switch (command){
+            case 0:
+                // cd
+                framebuffer_write(0, 70, '0', 0x0f, 0);
+                break;
+            case 1:
+                // ls
+                framebuffer_write(0, 70, '1', 0x0f, 0);
+                break;
+            case 2:
+                // mkdir
+                framebuffer_write(0, 70, '2', 0x0f, 0);
+                break;
+            case 3:
+                // cat
+                framebuffer_write(0, 70, '3', 0x0f, 0);
+                break;
+            case 4:
+                // cp
+                framebuffer_write(0, 70, '4', 0x0f, 0);
+                break;
+            case 5:
+                // rm
+                framebuffer_write(0, 70, '5', 0x0f, 0);
+                break;
+            case 6:
+                // mv
+                framebuffer_write(0, 70, '6', 0x0f, 0);
+                break;
+            case 7:
+                // whereis
+                framebuffer_write(0, 70, '7', 0x0f, 0);
+                break;
+            default:
+                // command not found
+                framebuffer_write(0, 70, 'x', 0x0f, 0);
+                break;
+        }
+            
+
         puts2((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
     }
 }
