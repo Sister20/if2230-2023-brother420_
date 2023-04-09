@@ -27,8 +27,8 @@ int main(void) {
 
     char buf[16];
     while (TRUE) {
-        syscall(4, (uint32_t) buf, 16, 0);
-        syscall(5, (uint32_t) buf, 16, 0xF);
+        syscall(4, (uint32_t) buf, 0x20, 0);
+        syscall(5, (uint32_t) buf, 0x20, 0xF);
     }
 
     return 0;

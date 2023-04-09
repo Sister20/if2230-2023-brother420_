@@ -175,6 +175,127 @@ void command_call_ls(void){
 
 }
 
+void command_call_mkdir(char *dirCommandName){
+    
+    struct FAT32DriverRequest request = {
+        .buf                    = 0,
+        .ext                    = "\0\0\0",
+        .parent_cluster_number  = current_directory_cluster,
+        .buffer_size            = 0,
+    };
+    for (int i = 6; i < 14; i++){
+        request.name[i-6] = dirCommandName[i];
+    }
+    write(request);
+}
+
+void command_call_cp(char *cpCommandName){
+    struct FAT32DriverState state_driver;
+    read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+    read_clusters(&state_driver.fat_table, 1, 1);
+
+    struct FAT32DriverRequest request = {
+        .parent_cluster_number  = current_directory_cluster,
+    };
+
+    uint8_t i = 0;
+    uint8_t j = 0;
+    while ((cpCommandName[i+3] != '.') && (cpCommandName[i+3] != ' ') && (i < 8)){
+        request.name[i] = cpCommandName[i+3];
+        i++;
+    }
+
+    if (cpCommandName[i+3] == ' '){
+        // Error karena tidak ada extensi
+        return;
+    }
+
+    if (i == 8 && cpCommandName[i+3] != '.'){
+        // Error karena nama file terlalu panjang
+        return;
+    }
+
+    if (i < 8){
+        for (int z = i; z < 8; z++){
+            request.name[z] = '\0';
+        }
+    }
+
+    j = i+1;
+    while ((cpCommandName[j+3] != ' ') && (j-i-1 < 3)){
+        request.ext[j-i-1] = cpCommandName[j+3];
+        j++;
+    }
+
+    if (j-i-1 == 3 && cpCommandName[j+3] != ' '){
+        // Error karena extensi terlalu panjang
+        return;
+    }
+
+    if (j-i-1 < 3){
+        for (int z = j-i-1; z < 3; z++){
+            request.ext[z] = '\0';
+        }
+    }
+
+
+    for (int m = 1; m < 64; m++){
+        if (state_driver.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+            if (memcmp(state_driver.dir_table_buf.table[m].name, request.name, 8) == 0 && 
+                memcmp(state_driver.dir_table_buf.table[m].ext, request.ext, 3) == 0){
+                // File ditemukan
+                request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
+                read(request);
+                break;      
+            }
+        }
+    }
+
+    uint8_t k = 0;
+    uint8_t l = 0;
+    while ((cpCommandName[j+4] != '.') && (cpCommandName[j+4] != ' ') && (k < 8)){
+        request.name[k] = cpCommandName[j+4];
+        k++;
+        j++;
+    }
+
+    if (cpCommandName[j+4] == ' '){
+        // Error karena tidak ada extensi
+        return;
+    }
+
+    if (k == 8 && cpCommandName[j+4] != '.'){
+        // Error karena nama file terlalu panjang
+        return;
+    }
+
+    if (k < 8){
+        for (int z = k; z < 8; z++){
+            request.name[z] = '\0';
+        }
+    }
+
+    while ((cpCommandName[l+j+5] != ' ') && cpCommandName[l+j+5] != '\0' && (l < 3)){
+        request.ext[l] = cpCommandName[l+j+5];
+        l++;
+    }
+
+    if (l == 3 && ((cpCommandName[l+j+5] != ' ') && (cpCommandName[l+j+5] != '\0'))){
+        // Error karena extensi terlalu panjang
+        return;
+    }
+
+    if (l < 3){
+        for (int z = l; z < 3; z++){
+            request.ext[z] = '\0';
+        }
+    }
+
+    write(request);
+
+
+}
+
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
@@ -208,6 +329,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             case 2:
                 // mkdir
                 framebuffer_write(0, 70, '2', 0x0f, 0);
+                command_call_mkdir((char *) cpu.ebx);
                 break;
             case 3:
                 // cat
@@ -216,6 +338,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             case 4:
                 // cp
                 framebuffer_write(0, 70, '4', 0x0f, 0);
+                command_call_cp((char *) cpu.ebx);
                 break;
             case 5:
                 // rm
@@ -241,7 +364,9 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
 }
 
 
-void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct InterruptStack info) {    switch (int_number) {
+void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct InterruptStack info) {    
+    
+    switch (int_number) {
 
         case PIC1_OFFSET + IRQ_KEYBOARD:
             keyboard_isr();
@@ -249,6 +374,7 @@ void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct 
         case 0x30:
             syscall(cpu, info);
             break;
-    }
+
+    };
 }
 

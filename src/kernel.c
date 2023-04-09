@@ -31,7 +31,7 @@ void kernel_setup(void) {
     struct FAT32DriverRequest requester = {
         .buf                   = cbuf,
         .name                  = "ikanaide",
-        .ext                   = "\0\0\0",
+        .ext                   = "uwu",
         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
         .buffer_size           = 20,
     };
