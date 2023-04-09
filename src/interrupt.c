@@ -175,6 +175,20 @@ void command_call_ls(void){
 
 }
 
+void command_call_mkdir(char *dirCommandName){
+    
+    struct FAT32DriverRequest request = {
+        .buf                    = 0,
+        .ext                    = "\0\0\0",
+        .parent_cluster_number  = current_directory_cluster,
+        .buffer_size            = 0,
+    };
+    for (int i = 6; i < 14; i++){
+        request.name[i-6] = dirCommandName[i];
+    }
+    write(request);
+}
+
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
@@ -208,6 +222,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             case 2:
                 // mkdir
                 framebuffer_write(0, 70, '2', 0x0f, 0);
+                command_call_mkdir((char *) cpu.ebx);
                 break;
             case 3:
                 // cat
