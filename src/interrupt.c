@@ -4,6 +4,8 @@
 #include "lib-header/stdmem.h"
 #include "lib-header/idt.h"
 
+uint8_t row_shell = 0;
+
 struct TSSEntry _interrupt_tss_entry = {
     .prev_tss = 0,
     .esp0 = 0,
@@ -90,16 +92,33 @@ void set_tss_kernel_current_stack(void) {
 // TODO: implement puts using framebuffer
 void puts(char *str, uint32_t len, uint32_t color) {
     for (uint32_t i = 0; i < len; i++) {
-        framebuffer_write(0, i, str[i], color, 0);
+        framebuffer_write(row_shell, i, str[i], color, 0);
     }
 }
 
+void puts2(char *str, uint32_t len, uint32_t color) {
+    for (uint32_t i = 0; i < len; i++) {
+        framebuffer_write(24, i, str[i], color, 0);
+    }
+}
+
+void template(void){
+    puts("Brother420/", 11, 0x0a);
+    framebuffer_write(row_shell, 11, ':', 0x01, 0);
+    framebuffer_write(row_shell, 12, '$', 0x0F, 0);
+    framebuffer_set_cursor(row_shell, 14);
+    row_shell++;
+}
 
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
         *((int8_t*) cpu.ecx) = read(request);
+        // if (*((int8_t*) cpu.ecx) == 0){
+        //     puts(request.buf, request.buffer_size, 0x0e);
+        // }
     } else if (cpu.eax == 4) {
+        template();
         keyboard_state_activate();
         __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
         while (is_keyboard_blocking());
@@ -107,16 +126,15 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         get_keyboard_buffer(buf);
         memcpy((char *) cpu.ebx, buf, cpu.ecx);
     } else if (cpu.eax == 5) {
-        puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
+        // ini berarti di-enter dari syscall 4
+        
+        puts2((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
     }
 }
 
 
-void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct InterruptStack info) {
-    switch (int_number) {
-        // case PAGE_FAULT:
-        //     __asm__("hlt");
-        //     break;
+void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct InterruptStack info) {    switch (int_number) {
+
         case PIC1_OFFSET + IRQ_KEYBOARD:
             keyboard_isr();
             break;
