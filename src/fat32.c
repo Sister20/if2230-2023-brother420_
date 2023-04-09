@@ -221,20 +221,21 @@ int8_t read(struct FAT32DriverRequest request){
             total_cluster = driver_state.dir_table_buf.table[i].filesize / CLUSTER_SIZE;
             if (total_cluster * CLUSTER_SIZE < driver_state.dir_table_buf.table[i].filesize){
                 total_cluster += 1;
-            } else {
-                location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
-                for (uint32_t j = 0; j < total_cluster; j++){
-                    if (j == 0){
-                        read_clusters(request.buf + CLUSTER_SIZE * j, location, 1);
-                    } else {
-                        read_clusters(request.buf + CLUSTER_SIZE * j, driver_state.fat_table.cluster_map[location], 1);
-                        location = driver_state.fat_table.cluster_map[location];
-                    }
+            } 
+
+            location = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
+            for (uint32_t j = 0; j < total_cluster; j++){
+                if (j == 0){
+                    read_clusters(request.buf + CLUSTER_SIZE * j, location, 1);
+                } else {
+                    read_clusters(request.buf + CLUSTER_SIZE * j, driver_state.fat_table.cluster_map[location], 1);
+                    location = driver_state.fat_table.cluster_map[location];
                 }
-                // get_time(&time, &date);
-                // driver_state.dir_table_buf.table[i].access_date = date;
-                write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
             }
+            // get_time(&time, &date);
+            // driver_state.dir_table_buf.table[i].access_date = date;
+            write_clusters(driver_state.dir_table_buf.table, request.parent_cluster_number,1);
+            
             break;
         }
     
