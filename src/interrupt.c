@@ -3,9 +3,13 @@
 #include "lib-header/gdt.h"
 #include "lib-header/stdmem.h"
 #include "lib-header/idt.h"
+#include "lib-header/currentdirectorystack.h"
+#include "lib-header/directorystack.h"
 
 uint8_t row_shell = 0;
 int current_directory_cluster = ROOT_CLUSTER_NUMBER;
+struct CURRENT_DIR_STACK current_dir_stack;
+bool initialized_cd_stack = FALSE;
 
 struct TSSEntry _interrupt_tss_entry = {
     .prev_tss = 0,
@@ -458,6 +462,11 @@ void command_call_cat(char *rmCommandName){
  * @return 0 jika berhasil, 1 jika gagal
 */
 uint8_t command_call_cd(char *path){
+    if (!initialized_cd_stack){
+        initialized_cd_stack = TRUE;
+        init_current_dir_stack(&current_dir_stack);
+    }
+
     // for one time only
     struct FAT32DriverState state_driver;
     read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
@@ -470,7 +479,11 @@ uint8_t command_call_cd(char *path){
 
     if (memcmp(path, "..", 2) == 0){
         // Pindah ke parent directory
-        current_directory_cluster = state_driver.dir_table_buf.table[0].cluster_high << 16 | state_driver.dir_table_buf.table[0].cluster_low;
+        if (current_directory_cluster == 2){
+            return 1;
+        }
+        pop_current_dir(&current_dir_stack);
+        current_directory_cluster = get_top_current_dir(&current_dir_stack);
         return 0;
     }
 
@@ -480,6 +493,7 @@ uint8_t command_call_cd(char *path){
                 memcmp(state_driver.dir_table_buf.table[i].ext, path_ext, 3) == 0){
                 // Folder ditemukan
                 current_directory_cluster = state_driver.dir_table_buf.table[i].cluster_high << 16 | state_driver.dir_table_buf.table[i].cluster_low;
+                push_current_dir(&current_dir_stack, current_directory_cluster);
                 return 0;
             }
         }
