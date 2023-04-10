@@ -530,6 +530,7 @@ void command_call_mv(char *path){
     char new_name[8];
     char new_ext[3];
     bool fileFound = FALSE;
+    // bool validName = FALSE;
 
     uint8_t i = 0;
     uint8_t j = 0;
@@ -562,11 +563,11 @@ void command_call_mv(char *path){
     if (!isFolder){
         
         while ((path[j] != ' ') && (j-i-1 < 3)){
-            request.ext[j-i-1] = path[j+3];
+            request.ext[j-i-1] = path[j];
             j++;
         }
 
-        if (j-i-1 == 3 && path[j+3] != '\0' && path[j+3] != ' '){
+        if (j-i-1 == 3 && path[j] != '\0' && path[j] != ' '){
             // Error karena extensi terlalu panjang
             return;
         }
@@ -595,18 +596,27 @@ void command_call_mv(char *path){
     if (j + 1 == '/'){
         // TODO pindah direktori
     } else {
-        uint8_t k = j;
-        while ((path[k] != ' ') && (k-j-1 < 8) && (path[k] != '\0')){
-            new_name[k-j] = path[k];
-            k++;
+
+        uint8_t k = isFolder ? j : j+1;
+        uint8_t l = 0;
+
+        if (path[k] == '\0' || path[k] == ' '){
+            // Error karena nama file tidak boleh kosong
+            return;
         }
 
-        if (k-j == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
+        while ((path[k] != ' ') && (k-j-1 < 8) && (path[k] != '\0') && (path[k] != '.')){
+            new_name[l] = path[k];
+            k++;
+            l++;
+        }
+
+        if (l == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
             // Error karena nama file terlalu panjang
             return;
         }
 
-        for (int z = k-j; z < 8; z++){
+        for (uint8_t z = l; z < 8; z++){
             new_name[z] = '\0';
         }
 
@@ -668,47 +678,47 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         switch (command){
             case 0:
                 // cd
-                framebuffer_write(0, 70, '0', 0x0f, 0);
+                framebuffer_write(0, 79, '0', 0x0f, 0);
                 uint8_t cd_res = command_call_cd(((char *) cpu.ebx) + 3);
                 cd_res = cd_res;
                 break;
             case 1:
                 // ls
-                framebuffer_write(0, 70, '1', 0x0f, 0);
+                framebuffer_write(0, 79, '1', 0x0f, 0);
                 command_call_ls();
                 break;
             case 2:
                 // mkdir
-                framebuffer_write(0, 70, '2', 0x0f, 0);
+                framebuffer_write(0, 79, '2', 0x0f, 0);
                 command_call_mkdir((char *) cpu.ebx);
                 break;
             case 3:
                 // cat
-                framebuffer_write(0, 70, '3', 0x0f, 0);
+                framebuffer_write(0, 79, '3', 0x0f, 0);
                 command_call_cat((char *) cpu.ebx);
                 break;
             case 4:
                 // cp
-                framebuffer_write(0, 70, '4', 0x0f, 0);
+                framebuffer_write(0, 79, '4', 0x0f, 0);
                 command_call_cp((char *) cpu.ebx);
                 break;
             case 5:
                 // rm
-                framebuffer_write(0, 70, '5', 0x0f, 0);
+                framebuffer_write(0, 79, '5', 0x0f, 0);
                 command_call_rm((char *) cpu.ebx);
                 break;
             case 6:
                 // mv
-                framebuffer_write(0, 70, '6', 0x0f, 0);
+                framebuffer_write(0, 79, '6', 0x0f, 0);
                 command_call_mv(((char *) cpu.ebx) + 3);
                 break;
             case 7:
                 // whereis
-                framebuffer_write(0, 70, '7', 0x0f, 0);
+                framebuffer_write(0, 79, '7', 0x0f, 0);
                 break;
             default:
                 // command not found
-                framebuffer_write(0, 70, 'x', 0x0f, 0);
+                framebuffer_write(0, 79, 'x', 0x0f, 0);
                 break;
         }
             
