@@ -655,6 +655,33 @@ void command_call_mv(char *path){
     
 }
 
+
+void command_call_multi_cd(char *path){
+    struct FAT32DriverState state_driver;
+    read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+    read_clusters(&state_driver.fat_table, 1, 1);
+
+    uint8_t i = 0;
+    uint8_t j = 0;
+    while (path[i] != '\0'){
+        if (path[i] == '/'){
+            j = i;
+        }
+        i++;
+    }
+
+    if (j == 0){
+        // berarti hanya satu direktori
+        command_call_cd(path);
+    } else {
+        char new_path[64];
+        memcpy(new_path+3, path, j);
+        new_path[j+3] = '\0';
+        command_call_cd(new_path);
+        command_call_multi_cd(path+j+1);
+    }
+}
+
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
@@ -664,6 +691,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         // }
     } else if (cpu.eax == 4) {
         template();
+        clear_keyboard_buffer();
         keyboard_state_activate();
         __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
         while (is_keyboard_blocking());
@@ -679,8 +707,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             case 0:
                 // cd
                 framebuffer_write(0, 79, '0', 0x0f, 0);
-                uint8_t cd_res = command_call_cd(((char *) cpu.ebx) + 3);
-                cd_res = cd_res;
+                command_call_multi_cd(((char *) cpu.ebx) + 3);
                 break;
             case 1:
                 // ls
