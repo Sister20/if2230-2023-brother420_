@@ -33,13 +33,36 @@ void kernel_setup(void) {
         .name                  = "ikanaide",
         .ext                   = "uwu",
         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = 20,
+        .buffer_size           = 0,
     };
+
+    requester.name[0] = 'a';
+    write(requester);
+
+    requester.name[0] = 'b';
+    write(requester);
+
+    requester.name[0] = 'c';
+    requester.parent_cluster_number = 5;
+    write(requester);
+
+    requester.buffer_size = 0x14;
+    requester.parent_cluster_number = ROOT_CLUSTER_NUMBER;
+    requester.name[0] = 'j';
     for (uint32_t i = 0; i < 15; i++){
+        if (i == 4){
+            requester.parent_cluster_number = 5;
+        } else if (i == 8){
+            requester.parent_cluster_number = 6;
+        } else if (i == 12){
+            requester.parent_cluster_number = 7;
+        }
         requester.name[0]++;
         write(requester); 
     }
     delete(requester);
+
+    
 
     struct ClusterBuffer ebuf = {
         "Nandemonai to kuchi o tsugunda\n"

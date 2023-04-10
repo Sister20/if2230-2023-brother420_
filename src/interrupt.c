@@ -3,9 +3,13 @@
 #include "lib-header/gdt.h"
 #include "lib-header/stdmem.h"
 #include "lib-header/idt.h"
+#include "lib-header/currentdirectorystack.h"
+#include "lib-header/directorystack.h"
 
 uint8_t row_shell = 0;
 int current_directory_cluster = ROOT_CLUSTER_NUMBER;
+struct CURRENT_DIR_STACK current_dir_stack;
+bool initialized_cd_stack = FALSE;
 
 struct TSSEntry _interrupt_tss_entry = {
     .prev_tss = 0,
@@ -452,6 +456,50 @@ void command_call_cat(char *rmCommandName){
 
 }
 
+/**
+ * Command cd <path> dilakukan untuk pindah ke direktori path
+ * @param path direktori tujuan yang hanya satu kata
+ * @return 0 jika berhasil, 1 jika gagal
+*/
+uint8_t command_call_cd(char *path){
+    if (!initialized_cd_stack){
+        initialized_cd_stack = TRUE;
+        init_current_dir_stack(&current_dir_stack);
+    }
+
+    // for one time only
+    struct FAT32DriverState state_driver;
+    read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+    read_clusters(&state_driver.fat_table, 1, 1);
+
+    char path_name[8];
+    char path_ext[3];
+    memcpy(path_name, path, 8);
+    memcpy(path_ext, "\0\0\0", 3);
+
+    if (memcmp(path, "..", 2) == 0){
+        // Pindah ke parent directory
+        if (current_directory_cluster == 2){
+            return 1;
+        }
+        pop_current_dir(&current_dir_stack);
+        current_directory_cluster = get_top_current_dir(&current_dir_stack);
+        return 0;
+    }
+
+    for (int i = 0; i < 64; i++){
+        if (state_driver.dir_table_buf.table[i].user_attribute == UATTR_NOT_EMPTY){
+            if (memcmp(state_driver.dir_table_buf.table[i].name, path_name, 8) == 0 && 
+                memcmp(state_driver.dir_table_buf.table[i].ext, path_ext, 3) == 0){
+                // Folder ditemukan
+                current_directory_cluster = state_driver.dir_table_buf.table[i].cluster_high << 16 | state_driver.dir_table_buf.table[i].cluster_low;
+                push_current_dir(&current_dir_stack, current_directory_cluster);
+                return 0;
+            }
+        }
+    } 
+    return 1;
+}
 
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
@@ -477,6 +525,8 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             case 0:
                 // cd
                 framebuffer_write(0, 70, '0', 0x0f, 0);
+                uint8_t cd_res = command_call_cd(((char *) cpu.ebx) + 3);
+                cd_res = cd_res;
                 break;
             case 1:
                 // ls
