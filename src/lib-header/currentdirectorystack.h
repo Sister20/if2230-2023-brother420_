@@ -11,9 +11,9 @@ void init_current_dir_stack(struct CURRENT_DIR_STACK *cds);
 
 void push_current_dir(struct CURRENT_DIR_STACK * cds, int dir);
 
-char* pop_current_dir(struct CURRENT_DIR_STACK * cds);
+int pop_current_dir(struct CURRENT_DIR_STACK * cds);
 
-char* get_top_current_dir(struct CURRENT_DIR_STACK * cds);
+int get_top_current_dir(struct CURRENT_DIR_STACK * cds);
 
 void reverse_current_dir(struct CURRENT_DIR_STACK * cds);
 
