@@ -51,6 +51,13 @@ void keyboard_state_deactivate(void){
   keyboard_state.keyboard_input_on=FALSE;
 }
 
+// Clear keyboard buffer
+void clear_keyboard_buffer(void){
+  for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
+    keyboard_state.keyboard_buffer[i] = 0;
+  }
+}
+
 // Get keyboard buffer values - @param buf Pointer to char buffer, recommended size at least KEYBOARD_BUFFER_SIZE
 void get_keyboard_buffer(char *buf){
   for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
@@ -111,7 +118,9 @@ void keyboard_isr(void) {
 
           /* Backspace */
           if (mapped_char == '\b') {
-            if (col) {
+            if (!keyboard_state.buffer_index) {
+              // nothing to delete
+            } else if (col) {
               keyboard_state.buffer_index--;
               col--;
               backspaceLine[row]--;

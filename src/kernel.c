@@ -39,9 +39,10 @@ void kernel_setup(void) {
     requester.name[0] = 'a';
     write(requester);
 
-    requester.name[0] = 'b';
+    memcpy(requester.name + 4, "\0\0\0\0", 4);
     write(requester);
 
+    memcpy(requester.name + 4, "FFAA", 4);
     requester.name[0] = 'c';
     requester.parent_cluster_number = 5;
     write(requester);
@@ -49,12 +50,16 @@ void kernel_setup(void) {
     requester.buffer_size = 0x14;
     requester.parent_cluster_number = ROOT_CLUSTER_NUMBER;
     requester.name[0] = 'j';
+    memcpy(requester.name + 4, "aide", 4);
     for (uint32_t i = 0; i < 15; i++){
         if (i == 4){
+            memcpy(requester.name + 4, "L\0\0\0", 4);
             requester.parent_cluster_number = 5;
         } else if (i == 8){
+            memcpy(requester.name + 4, "Du\0\0", 4);
             requester.parent_cluster_number = 6;
         } else if (i == 12){
+            memcpy(requester.name + 4, "HALO", 4);
             requester.parent_cluster_number = 7;
         }
         requester.name[0]++;
