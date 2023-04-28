@@ -44,7 +44,7 @@ void kernel_setup(void) {
 
     memcpy(requester.name + 4, "FFAA", 4);
     requester.name[0] = 'c';
-    requester.parent_cluster_number = 7;
+    requester.parent_cluster_number = 9;
     write(requester);
 
     requester.buffer_size = 0x14;
@@ -54,13 +54,13 @@ void kernel_setup(void) {
     for (uint32_t i = 0; i < 15; i++){
         if (i == 4){
             memcpy(requester.name + 4, "L\0\0\0", 4);
-            requester.parent_cluster_number = 7;
+            requester.parent_cluster_number = 9;
         } else if (i == 8){
             memcpy(requester.name + 4, "Du\0\0", 4);
-            requester.parent_cluster_number = 8;
+            requester.parent_cluster_number = 10;
         } else if (i == 12){
             memcpy(requester.name + 4, "HALO", 4);
-            requester.parent_cluster_number = 9;
+            requester.parent_cluster_number = 11;
         }
         requester.name[0]++;
         write(requester); 
