@@ -153,6 +153,12 @@ void puts_line(char *input, int row, int col, int length, int color){
     }
 }
 
+void showWhereIs(struct DIR_STACK dir_stack, uint32_t row_shells){
+    for (int i = 0; i < dir_stack.top; i++){
+        puts((char *) &(dir_stack.stack[i]), 80, 0x0a, row_shells);
+    }
+}
+
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
@@ -228,10 +234,21 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         write_clusters((struct FAT32DirectoryTable *) cpu.ebx, cpu.ecx, cpu.edx);
     }
 
-    // Syscall get path from current dir
-    // else if (cpu.eax == 14) {
-    //     convert_to_path((struct CURRENT_DIR_STACK *) cpu.ebx, (char *) cpu.ecx);
-    // }
+    // Syscall get where is location
+    else if (cpu.eax == 14) {
+        push_dir((struct DIR_STACK * ) cpu.ebx, (char *) cpu.ecx);
+    }
+
+    // Syscall to convert to path
+    else if (cpu.eax == 15) {
+        char *cwd = convert_to_paths((struct CURRENT_DIR_STACK *) cpu.ebx);
+        memcpy((char *) cpu.ecx, cwd, 0x100);
+    }
+
+    // Syscall initialize dir stack
+    else if (cpu.eax == 16) {
+        init_dir_stack((struct DIR_STACK *) cpu.ebx);
+    }
 }
 
 

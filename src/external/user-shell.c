@@ -1,10 +1,12 @@
 #include "../lib-header/stdtype.h"
 #include "../lib-header/fat32.h"
 #include "../lib-header/currentdirectorystack.h"
+#include "../lib-header/directorystack.h"
 
 uint8_t row_shell = 0;
 int current_directory_cluster = ROOT_CLUSTER_NUMBER;
 struct CURRENT_DIR_STACK current_dir_stack;
+struct DIR_STACK dirRet;
 bool initialized_cd_stack = FALSE;
 
 void* memcpy(void* restrict dest, const void* restrict src, size_t n) {
@@ -548,7 +550,85 @@ void command_call_rm(char *rmCommandName){
 
 // }
 
+void dfs(struct CURRENT_DIR_STACK * dir, char * name, char * ext){
+    struct FAT32DriverState state_driver;
+    char * returnVal;
+    char isFolder[3] = "\0\0\0";
+    syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+    for (int m = 1; m < 64; m++){
+        if (state_driver.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+            if (memcmp(state_driver.dir_table_buf.table[m].name, name, 8) == 0 && 
+                memcmp(state_driver.dir_table_buf.table[m].ext, ext, 3) == 0){
+                // File ditemukan
+                syscall(15, (uint32_t) &dir, (uint32_t) &returnVal, 0);
+                syscall(14, (uint32_t) &dirRet, (uint32_t) returnVal, 0);
+            }
+        }
+        if (memcmp(state_driver.dir_table_buf.table[m].name, isFolder, 3) == 0){
+            syscall(11, (uint32_t) &dir, 0, (uint32_t) state_driver.dir_table_buf.table[m].name);
+            dfs(dir, name, ext);
+        }
+    }
+}
 
+void command_call_whereis(char *whCommandName){
+    struct CURRENT_DIR_STACK dir;
+    
+    syscall(16, (uint32_t) &dirRet, 0, 0);
+
+    bool isFolder = FALSE;
+    char name[8];
+    char ext[3];
+    uint8_t i = 0;
+    uint8_t j = 0;
+
+    while ((whCommandName[i+8] != '.') && (whCommandName[i+8] != ' ') && (i < 8)){
+        name[i] = whCommandName[i+8];
+        i++;
+    }
+
+    if (whCommandName[i+8] == ' '){
+        // Error karena tidak ada extensi
+        return;
+    }
+
+    if (whCommandName[i+8] == '\0'){
+        // berarti folder
+        isFolder = TRUE;
+        for (int z = 0; z < 3; z++){
+            ext[z] = '\0';
+        }
+    }
+
+    if (i < 8){
+        for (int z = i; z < 8; z++){
+            name[z] = '\0';
+        }
+    }
+
+    if (!isFolder){
+        j = i+1;
+        while ((whCommandName[j+3] != ' ') && (j-i-1 < 3)){
+            ext[j-i-1] = whCommandName[j+3];
+            j++;
+        }
+
+        if (j-i-1 == 3 && whCommandName[j+3] != '\0' && whCommandName[j+3] != ' '){
+            // Error karena extensi terlalu panjang
+            return;
+        }
+
+        if (j-i-1 < 3){
+            for (int z = j-i-1; z < 3; z++){
+                ext[z] = '\0';
+            }
+        }
+
+    }
+
+    dfs(&dir, name, ext);
+
+}
 
 
 void command_call_mv(char *path){
@@ -753,7 +833,7 @@ int main(void) {
                 break;
             case 7:
                 // whereis
-                // framebuffer_write(0, 79, '7', 0x0f, 0);
+                command_call_whereis((char *) buf);
                 break;
             default:
                 // command not found

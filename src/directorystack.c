@@ -6,21 +6,21 @@ void init_dir_stack(struct DIR_STACK *stack) {
     stack->top = -1;
 }
 
-void push_dir(struct DIR_STACK * ds, char name[8]){
+void push_dir(struct DIR_STACK * ds, char *path){
     ds->top++;
-    memcpy(ds->stack[ds->top].name, name, 8);
+    memcpy(ds->stack[ds->top].path, path, 255);
 }
 
 char * pop_dir(struct DIR_STACK * ds){
     if (ds->top == -1)
         return "\0";
-    char * name = ds->stack[ds->top].name;
+    char * path = ds->stack[ds->top].path;
     ds->top--;
-    return name;
+    return path;
 }
 
 char* get_top_dir(struct DIR_STACK * ds){
-    return ds->stack[ds->top].name;
+    return ds->stack[ds->top].path;
 }
 
 void reverse_dir(struct DIR_STACK * ds){
@@ -28,14 +28,13 @@ void reverse_dir(struct DIR_STACK * ds){
     int j = ds->top;
     while (i < j){
         char temp[8];
-        memcpy(temp, ds->stack[i].name, 8);
-        memcpy(ds->stack[i].name, ds->stack[j].name, 8);
-        memcpy(ds->stack[j].name, temp, 8);
+        memcpy(temp, ds->stack[i].path, 8);
+        memcpy(ds->stack[i].path, ds->stack[j].path, 8);
+        memcpy(ds->stack[j].path, temp, 8);
         i++;
         j--;
     }
 }
-
 
 struct DIR_STACK get_dir_stack(char * request, int * validate){
     struct DIR_STACK ds;
@@ -47,10 +46,10 @@ struct DIR_STACK get_dir_stack(char * request, int * validate){
             i++;
             continue;
         }
-        char name[8];
+        char path[8];
         int j = 0;
         while (request[i] != '/' && request[i] != '\0'){
-            name[j] = request[i];
+            path[j] = request[i];
             i++;
             j++;
         }
@@ -59,10 +58,10 @@ struct DIR_STACK get_dir_stack(char * request, int * validate){
             return ds;
         }
         while (j < 8){
-            name[j] = '\0';
+            path[j] = '\0';
             j++;
         }
-        push_dir(&ds, name);
+        push_dir(&ds, path);
     }
     
     return ds;
