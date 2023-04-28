@@ -167,6 +167,21 @@ void command_call_multi_cd(char *path){
     }
 }
 
+void command_call_mkdir(char *dirCommandName){
+    
+    struct FAT32DriverRequest request = {
+        .buf                    = 0,
+        .ext                    = "\0\0\0",
+        .parent_cluster_number  = current_directory_cluster,
+        .buffer_size            = 0,
+    };
+    for (int i = 6; i < 14; i++){
+        request.name[i-6] = dirCommandName[i];
+    }
+    // write(request);
+    syscall(2, (uint32_t) &request, 0, 0);
+}
+
 int main(void) {
     struct ClusterBuffer cl           = {0};
     struct FAT32DriverRequest request = {
@@ -193,7 +208,6 @@ int main(void) {
         switch (command){
             case 0:
                 // cd
-                // framebuffer_write(0, 79, '0', 0x0f, 0);
                 command_call_multi_cd(((char *) buf) + 3);
                 break;
             case 1:
@@ -202,8 +216,7 @@ int main(void) {
                 break;
             case 2:
                 // mkdir
-                // framebuffer_write(0, 79, '2', 0x0f, 0);
-                // command_call_mkdir((char *) buf);
+                command_call_mkdir((char *) buf);
                 break;
             case 3:
                 // cat
