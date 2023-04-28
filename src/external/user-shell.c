@@ -250,6 +250,118 @@ void command_call_cat(char *rmCommandName){
     syscall(12, (uint32_t) request.buf, request.buffer_size, (uint32_t) &row_shell);
 }
 
+void command_call_cp(char *cpCommandName){
+    uint32_t retCode;
+    struct FAT32DriverState state_driver;
+    // read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+    syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+
+    struct ClusterBuffer cbuf[4];
+
+    struct FAT32DriverRequest request = {
+        .parent_cluster_number  = current_directory_cluster,
+        .buf                    = cbuf,
+    };
+
+    uint8_t i = 0;
+    uint8_t j = 0;
+    while ((cpCommandName[i+3] != '.') && (cpCommandName[i+3] != ' ') && (i < 8)){
+        request.name[i] = cpCommandName[i+3];
+        i++;
+    }
+
+    if (cpCommandName[i+3] == ' '){
+        // Error karena tidak ada extensi
+        return;
+    }
+
+    if (i == 8 && cpCommandName[i+3] != '.'){
+        // Error karena nama file terlalu panjang
+        return;
+    }
+
+    if (i < 8){
+        for (int z = i; z < 8; z++){
+            request.name[z] = '\0';
+        }
+    }
+
+    j = i+1;
+    while ((cpCommandName[j+3] != ' ') && (j-i-1 < 3)){
+        request.ext[j-i-1] = cpCommandName[j+3];
+        j++;
+    }
+
+    if (j-i-1 == 3 && cpCommandName[j+3] != ' '){
+        // Error karena extensi terlalu panjang
+        return;
+    }
+
+    if (j-i-1 < 3){
+        for (int z = j-i-1; z < 3; z++){
+            request.ext[z] = '\0';
+        }
+    }
+
+
+    for (int m = 1; m < 64; m++){
+        if (state_driver.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+            if (memcmp(state_driver.dir_table_buf.table[m].name, request.name, 8) == 0 && 
+                memcmp(state_driver.dir_table_buf.table[m].ext, request.ext, 3) == 0){
+                // File ditemukan
+                request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
+                // read(request);
+                syscall(0, (uint32_t) &request, (uint32_t) &retCode, 0);
+                
+                break;      
+            }
+        }
+    }
+
+    uint8_t k = 0;
+    uint8_t l = 0;
+    while ((cpCommandName[j+4] != '.') && (cpCommandName[j+4] != ' ') && (k < 8)){
+        request.name[k] = cpCommandName[j+4];
+        k++;
+        j++;
+    }
+
+    if (cpCommandName[j+4] == ' '){
+        // Error karena tidak ada extensi
+        return;
+    }
+
+    if (k == 8 && cpCommandName[j+4] != '.'){
+        // Error karena nama file terlalu panjang
+        return;
+    }
+
+    if (k < 8){
+        for (int z = k; z < 8; z++){
+            request.name[z] = '\0';
+        }
+    }
+
+    while ((cpCommandName[l+j+5] != ' ') && cpCommandName[l+j+5] != '\0' && (l < 3)){
+        request.ext[l] = cpCommandName[l+j+5];
+        l++;
+    }
+
+    if (l == 3 && ((cpCommandName[l+j+5] != ' ') && (cpCommandName[l+j+5] != '\0'))){
+        // Error karena extensi terlalu panjang
+        return;
+    }
+
+    if (l < 3){
+        for (int z = l; z < 3; z++){
+            request.ext[z] = '\0';
+        }
+    }
+
+    // write(request);
+    syscall(2, (uint32_t) &request, 0, 0);
+
+}
 
 int main(void) {
     struct ClusterBuffer cl           = {0};
@@ -293,8 +405,7 @@ int main(void) {
                 break;
             case 4:
                 // cp
-                // framebuffer_write(0, 79, '4', 0x0f, 0);
-                // command_call_cp((char *) buf);
+                command_call_cp((char *) buf);
                 break;
             case 5:
                 // rm
