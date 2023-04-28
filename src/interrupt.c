@@ -95,9 +95,9 @@ void set_tss_kernel_current_stack(void) {
 
 
 // TODO: implement puts using framebuffer
-void puts(char *str, uint32_t len, uint32_t color) {
+void puts(char *str, uint32_t len, uint32_t color, uint32_t row_shells) {
     for (uint32_t i = 0; i < len; i++) {
-        framebuffer_write(row_shell, i, str[i], color, 0);
+        framebuffer_write(row_shells, i, str[i], color, 0);
     }
 }
 
@@ -134,12 +134,11 @@ void puts_long_text(char *str, uint32_t len, uint32_t color) {
 }
 
 
-void template(void){
-    puts("Brother420/", 11, 0x0a);
-    framebuffer_write(row_shell, 11, ':', 0x01, 0);
-    framebuffer_write(row_shell, 12, '$', 0x0F, 0);
-    framebuffer_set_cursor(row_shell, 14);
-    row_shell++;
+void template(uint32_t row_shells){
+    puts("Brother420/", 11, 0x0a, row_shells);
+    framebuffer_write(row_shells, 11, ':', 0x01, 0);
+    framebuffer_write(row_shells, 12, '$', 0x0F, 0);
+    framebuffer_set_cursor(row_shells, 14);
 }
 
 /**
@@ -713,7 +712,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
 
 
     } else if (cpu.eax == 4) {
-        template();
+        template((uint32_t) cpu.edx);
         clear_keyboard_buffer();
         keyboard_state_activate();
         __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
@@ -722,58 +721,38 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         get_keyboard_buffer(buf);
         memcpy((char *) cpu.ebx, buf, cpu.ecx);
     } else if (cpu.eax == 5) {
-        // ini berarti di-enter dari syscall 4
-        
-        uint8_t command = getCommandInput((char *) cpu.ebx, cpu.ecx);
-        
-        switch (command){
-            case 0:
-                // cd
-                framebuffer_write(0, 79, '0', 0x0f, 0);
-                command_call_multi_cd(((char *) cpu.ebx) + 3);
-                break;
-            case 1:
-                // ls
-                framebuffer_write(0, 79, '1', 0x0f, 0);
-                command_call_ls();
-                break;
-            case 2:
-                // mkdir
-                framebuffer_write(0, 79, '2', 0x0f, 0);
-                command_call_mkdir((char *) cpu.ebx);
-                break;
-            case 3:
-                // cat
-                framebuffer_write(0, 79, '3', 0x0f, 0);
-                command_call_cat((char *) cpu.ebx);
-                break;
-            case 4:
-                // cp
-                framebuffer_write(0, 79, '4', 0x0f, 0);
-                command_call_cp((char *) cpu.ebx);
-                break;
-            case 5:
-                // rm
-                framebuffer_write(0, 79, '5', 0x0f, 0);
-                command_call_rm((char *) cpu.ebx);
-                break;
-            case 6:
-                // mv
-                framebuffer_write(0, 79, '6', 0x0f, 0);
-                command_call_mv(((char *) cpu.ebx) + 3);
-                break;
-            case 7:
-                // whereis
-                framebuffer_write(0, 79, '7', 0x0f, 0);
-                break;
-            default:
-                // command not found
-                framebuffer_write(0, 79, 'x', 0x0f, 0);
-                break;
-        }
-            
-
         puts2((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
+    }
+
+    // Syscall cd
+    else if (cpu.eax == 6) {
+        puts_line((char*) cpu.ebx, cpu.ecx, cpu.edx, 8, 0x0F);
+    }
+
+    // Syscall addrow
+    else if (cpu.eax == 7) {
+        addRow(cpu.ebx);
+    }
+
+    // Syscall read cluster
+    else if (cpu.eax == 8) {
+        read_clusters((struct FAT32DirectoryTable *) cpu.ebx, cpu.ecx, cpu.edx);
+    }
+
+    // Syscall init current directory
+    else if (cpu.eax == 9) {
+        init_current_dir_stack((struct CURRENT_DIR_STACK *) cpu.ebx);
+    }
+
+    // Syscall pop current dir
+    else if (cpu.eax == 10) {
+        pop_current_dir((struct CURRENT_DIR_STACK *) cpu.ebx);
+        *((int*) cpu.ecx) = get_top_current_dir((struct CURRENT_DIR_STACK *) cpu.ebx);
+    }
+
+    // Syscall push current dir
+    else if (cpu.eax == 11) {
+        push_current_dir((struct CURRENT_DIR_STACK *) cpu.ebx, cpu.ecx);
     }
 }
 
