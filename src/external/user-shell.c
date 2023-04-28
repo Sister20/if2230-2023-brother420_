@@ -102,11 +102,6 @@ void command_call_ls(void){
  * @return 0 jika berhasil, 1 jika gagal
 */
 uint8_t command_call_cd(char *path){
-    if (!initialized_cd_stack){
-        initialized_cd_stack = TRUE;
-        // init_current_dir_stack(&current_dir_stack);
-        syscall(9, (uint32_t) &current_dir_stack, 0, 0);
-    }
 
     // for one time only
     struct FAT32DriverState state_driver;
@@ -136,7 +131,7 @@ uint8_t command_call_cd(char *path){
                 // Folder ditemukan
                 current_directory_cluster = state_driver.dir_table_buf.table[i].cluster_high << 16 | state_driver.dir_table_buf.table[i].cluster_low;
                 // push_current_dir(&current_dir_stack, current_directory_cluster);
-                syscall(11, (uint32_t) &current_dir_stack, (uint32_t) current_directory_cluster, 0);
+                syscall(11, (uint32_t) &current_dir_stack, (uint32_t) current_directory_cluster, (uint32_t) path_name);
                 return 0;
             }
         }
@@ -714,8 +709,15 @@ int main(void) {
     char buf[16];
 
     uint8_t command;
+
+    if (!initialized_cd_stack){
+        initialized_cd_stack = TRUE;
+        // init_current_dir_stack(&current_dir_stack);
+        syscall(9, (uint32_t) &current_dir_stack, 0, 0);
+    }
+    
     while (TRUE) {
-        syscall(4, (uint32_t) buf, 0x20, (uint32_t) row_shell);
+        syscall(4, (uint32_t) buf, (uint32_t) &current_dir_stack, (uint32_t) row_shell);
         row_shell++;
         command = getCommandInput((char*) buf, 16);
         

@@ -515,6 +515,14 @@ void keyboard_isrs(void) {
     
 }
 
+void setCol (uint8_t cols){
+  if (cols >= 80){
+    col = 0;
+  } else {
+    col = cols;
+  }
+}
+
 
 /* -- Keyboard Interrupt Service Routine -- */
 
@@ -541,7 +549,7 @@ void keyboard_isr(void) {
     framebuffer_write(21,11,'L',0xa,0);
   } else {
     keyboard_state.buffer_index = 0;
-    col = 14;
+    // col = 14;
     while (is_keyboard_blocking()){
       uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
       char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
