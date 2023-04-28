@@ -433,6 +433,147 @@ void command_call_rm(char *rmCommandName){
     }
 }
 
+void command_call_mv(char *path){
+    struct FAT32DriverState state_driver;
+    // read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+    // read_clusters(&state_driver.fat_table, 1, 1);
+    syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+    syscall(8, (uint32_t) &state_driver.fat_table, 1, 1);
+
+    bool isFolder = FALSE;
+
+    struct FAT32DriverRequest request = {
+        .parent_cluster_number  = current_directory_cluster,
+    };
+
+    char new_name[8];
+    char new_ext[3];
+    bool fileFound = FALSE;
+    // bool validName = FALSE;
+
+    uint8_t i = 0;
+    uint8_t j = 0;
+    while ((path[i] != '.') && (path[i] != ' ') && (i < 8)){
+        request.name[i] = path[i];
+        i++;
+    }
+
+    if (i == 8 && path[i] != '.' && path[i] != ' '){
+        // berarti kepanjangan
+        return;
+    }
+
+    if (path[i] == ' '){
+        // berarti folder
+        isFolder = TRUE;
+        for (int z = 0; z < 3; z++){
+            request.ext[z] = '\0';
+        }
+    }
+
+    if (i < 8){
+        for (int z = i; z < 8; z++){
+            request.name[z] = '\0';
+        }
+    }
+
+    j = i+1;
+
+    if (!isFolder){
+        
+        while ((path[j] != ' ') && (j-i-1 < 3)){
+            request.ext[j-i-1] = path[j];
+            j++;
+        }
+
+        if (j-i-1 == 3 && path[j] != '\0' && path[j] != ' '){
+            // Error karena extensi terlalu panjang
+            return;
+        }
+
+        if (j-i-1 < 3){
+            for (int z = j-i-1; z < 3; z++){
+                request.ext[z] = '\0';
+            }
+        }
+    }
+
+    // saat ini dah didapat mv file/folder 
+    int m;
+    for (m = 1; m < 64; m++){
+        if (state_driver.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+            if (memcmp(state_driver.dir_table_buf.table[m].name, request.name, 8) == 0 && 
+                memcmp(state_driver.dir_table_buf.table[m].ext, request.ext, 3) == 0){
+                // File ditemukan
+                request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
+                fileFound = TRUE;
+                break;      
+            }
+        }
+    }
+
+    if (j + 1 == '/'){
+        // TODO pindah direktori
+    } else {
+
+        uint8_t k = isFolder ? j : j+1;
+        uint8_t l = 0;
+
+        if (path[k] == '\0' || path[k] == ' '){
+            // Error karena nama file tidak boleh kosong
+            return;
+        }
+
+        while ((path[k] != ' ') && (k-j-1 < 8) && (path[k] != '\0') && (path[k] != '.')){
+            new_name[l] = path[k];
+            k++;
+            l++;
+        }
+
+        if (l == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
+            // Error karena nama file terlalu panjang
+            return;
+        }
+
+        for (uint8_t z = l; z < 8; z++){
+            new_name[z] = '\0';
+        }
+
+        if (isFolder){
+            for (int z = 0; z < 3; z++){
+                new_ext[z] = '\0';
+            }
+        } else {
+            j = k+1;
+            while ((path[j] != ' ') && (j-k-1 < 3)){
+                new_ext[j-k-1] = path[j];
+                j++;
+            }
+
+            if (j-k-1 == 3 && path[j] != '\0' && path[j] != ' '){
+                // Error karena extensi terlalu panjang
+                return;
+            }
+
+            if (j-k-1 < 3){
+                for (int z = j-k-1; z < 3; z++){
+                    new_ext[z] = '\0';
+                }
+            }
+        }
+
+        if (fileFound){
+            memcpy(state_driver.dir_table_buf.table[m].name, new_name, 8);
+            memcpy(state_driver.dir_table_buf.table[m].ext, new_ext, 3);
+            // write_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+            syscall(13, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+        }
+
+    }
+
+    
+}
+
 int main(void) {
     struct ClusterBuffer cl           = {0};
     struct FAT32DriverRequest request = {
@@ -483,8 +624,7 @@ int main(void) {
                 break;
             case 6:
                 // mv
-                // framebuffer_write(0, 79, '6', 0x0f, 0);
-                // command_call_mv(((char *) buf) + 3);
+                command_call_mv(((char *) buf) + 3);
                 break;
             case 7:
                 // whereis

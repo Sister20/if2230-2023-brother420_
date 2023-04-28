@@ -759,6 +759,11 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
     else if (cpu.eax == 12) {
         puts_long_text((char *) cpu.ebx, cpu.ecx, 0x0E, (uint8_t*) (cpu.edx));
     }
+
+    // Syscall write cluster
+    else if (cpu.eax == 13) {
+        write_clusters((struct FAT32DirectoryTable *) cpu.ebx, cpu.ecx, cpu.edx);
+    }
 }
 
 
