@@ -81,6 +81,7 @@ void kernel_setup(void) {
         "Naicha dame naicha dame\n"
         "Demo honto wa iitai yo\n"
         "Ikanaide\n"
+        "Chizuru\n"
     };
 
     requester.name[0] = 'i';

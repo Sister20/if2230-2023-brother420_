@@ -101,6 +101,11 @@ void puts(char *str, uint32_t len, uint32_t color) {
     }
 }
 
+/**
+ * @param str string to be printed
+ * @param len length of string
+ * @param color color of string
+*/
 void puts2(char *str, uint32_t len, uint32_t color) {
     for (uint32_t i = 0; i < len; i++) {
         framebuffer_write(24, i, str[i], color, 0);
@@ -220,8 +225,11 @@ void command_call_cp(char *cpCommandName){
     read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
     read_clusters(&state_driver.fat_table, 1, 1);
 
+    struct ClusterBuffer cbuf[4];
+
     struct FAT32DriverRequest request = {
         .parent_cluster_number  = current_directory_cluster,
+        .buf                    = cbuf,
     };
 
     uint8_t i = 0;
@@ -399,8 +407,11 @@ void command_call_cat(char *rmCommandName){
     read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
     read_clusters(&state_driver.fat_table, 1, 1);
 
+    struct ClusterBuffer cbuf[4];
+
     struct FAT32DriverRequest request = {
         .parent_cluster_number  = current_directory_cluster,
+        .buf                    = cbuf,
     };
 
     uint8_t i = 0;
@@ -689,6 +700,18 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         // if (*((int8_t*) cpu.ecx) == 0){
         //     puts(request.buf, request.buffer_size, 0x0e);
         // }
+    } else if (cpu.eax == 1){
+        // struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
+        
+
+    } else if (cpu.eax == 2) {
+        // struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
+
+
+    } else if (cpu.eax == 3) {
+        // struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
+
+
     } else if (cpu.eax == 4) {
         template();
         clear_keyboard_buffer();
