@@ -11,6 +11,8 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("int $0x30");
 }
 
+// TODO: pindahin semua fungsi dari interupt.c
+
 int main(void) {
     struct ClusterBuffer cl           = {0};
     struct FAT32DriverRequest request = {
@@ -28,6 +30,9 @@ int main(void) {
     char buf[16];
     while (TRUE) {
         syscall(4, (uint32_t) buf, 0x20, 0);
+        // TODO: prosess
+        
+
         syscall(5, (uint32_t) buf, 0x20, 0xF);
     }
 
