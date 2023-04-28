@@ -433,6 +433,129 @@ void command_call_rm(char *rmCommandName){
     }
 }
 
+// void command_call_Whereis(char *whCommandName){
+//     struct CURRENT_DIR_STACK path;
+//     struct CURRENT_DIR_STACK dir;
+//     struct CURRENT_DIR_STACK ret_stack;
+//     syscall(9, (uint32_t) &path, 0, 0);
+//     syscall(9, (uint32_t) &dir, 0, 0);
+//     syscall(9, (uint32_t) &ret_stack, 0, 0);
+
+//     // struct FAT32DriverState state_driver;
+//     // read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+//     // read_clusters(&state_driver.fat_table, 1, 1);
+
+//     bool isFolder = FALSE;
+//     char name[8];
+//     char ext[3];
+//     uint8_t i = 0;
+//     uint8_t j = 0;
+
+//     while ((whCommandName[i+8] != '.') && (whCommandName[i+8] != ' ') && (i < 8)){
+//         name[i] = whCommandName[i+8];
+//         i++;
+//     }
+
+//     if (whCommandName[i+8] == ' '){
+//         // Error karena tidak ada extensi
+//         return;
+//     }
+
+//     if (whCommandName[i+8] == '\0'){
+//         // berarti folder
+//         isFolder = TRUE;
+//         for (int z = 0; z < 3; z++){
+//             ext[z] = '\0';
+//         }
+//     }
+
+//     if (i < 8){
+//         for (int z = i; z < 8; z++){
+//             name[z] = '\0';
+//         }
+//     }
+
+//     if (!isFolder){
+//         j = i+1;
+//         while ((whCommandName[j+3] != ' ') && (j-i-1 < 3)){
+//             ext[j-i-1] = whCommandName[j+3];
+//             j++;
+//         }
+
+//         if (j-i-1 == 3 && whCommandName[j+3] != '\0' && whCommandName[j+3] != ' '){
+//             // Error karena extensi terlalu panjang
+//             return;
+//         }
+
+//         if (j-i-1 < 3){
+//             for (int z = j-i-1; z < 3; z++){
+//                 ext[z] = '\0';
+//             }
+//         }
+
+//         do // proses pencarian ketika dia file
+//     {   
+//         current_directory_cluster = syscall(10, (uint32_t) &dir, 0, 0);
+//         syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+//         for (int m = 0; m < 64; m++){
+//             if (state_driver.dir_table_buf.table[m].buff == 0){
+//                 syscall(11, (uint32_t) &dir, (uint32_t) current_directory_cluster, 0);
+//             }
+
+//             if (memcmp(state_driver.dir_table_buf.table[m].name, request.name, 8) == 0 && 
+//                 memcmp(state_driver.dir_table_buf.table[m].ext, request.ext, 3) == 0){
+//                 syscall(11, (uint32_t) &path, (uint32_t) current_directory_cluster, 0);
+
+//                 // File ditemukan
+//                 // request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
+//                 // // delete(request);
+//                 // syscall(3, (uint32_t) &request, 0, 0);
+//                 // break;      
+
+
+//             }
+//         }
+
+//     } while (dir.top != 0);
+
+//     } else {
+//         do // proses pencarian ketika dia folder
+//     {   
+//         current_directory_cluster = syscall(10, (uint32_t) &dir, 0, 0);
+//         syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+//         for (int m = 0; m < 64; m++){
+
+//             if (state_driver.dir_table_buf.table[m].buff == 0){
+//                 syscall(11, (uint32_t) &dir, (uint32_t) current_directory_cluster, 0);
+//             }
+
+//             if (memcmp(state_driver.dir_table_buf.table[m].name, request.name, 8) == 0 && 
+//                 memcmp(state_driver.dir_table_buf.table[m].ext, request.ext, 3) == 0){
+//                     syscall(11, (uint32_t) &path, (uint32_t) current_directory_cluster, 0);
+                
+//                 // File ditemukan
+//                 // request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
+//                 // // delete(request);
+//                 // syscall(3, (uint32_t) &request, 0, 0);
+//                 // break;      
+
+
+//             }
+//         }
+
+//     } while (dir.top != 0);
+//     }
+
+    
+    
+
+
+
+// }
+
+
+
+
 void command_call_mv(char *path){
     struct FAT32DriverState state_driver;
     // read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
