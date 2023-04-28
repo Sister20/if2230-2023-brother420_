@@ -97,7 +97,7 @@ bool restoreSplashScreen(){
  * This can be made into blocking input with `while (is_keyboard_blocking());` 
  * after calling `keyboard_state_activate();`
  */
-void keyboard_isr(void) {
+void keyboard_isrs(void) {
     bool capslock = FALSE;
     bool shifted = FALSE;
     int16_t holdWait = 0;
@@ -512,5 +512,164 @@ void keyboard_isr(void) {
         }
       }
     }
-    pic_ack(IRQ_KEYBOARD);
+    
+}
+
+
+/* -- Keyboard Interrupt Service Routine -- */
+
+/**
+ * Handling keyboard interrupt & process scancodes into ASCII character.
+ * Will start listen and process keyboard scancode if keyboard_input_on.
+ * 
+ * Will only print printable character into framebuffer.
+ * Stop processing when enter key (line feed) is pressed.
+ * 
+ * Note that, with keyboard interrupt & ISR, keyboard reading is non-blocking.
+ * This can be made into blocking input with `while (is_keyboard_blocking());` 
+ * after calling `keyboard_state_activate();`
+ */
+void keyboard_isr(void) {
+  bool alt = FALSE;
+  bool ctrl = FALSE;
+  bool shift = FALSE;
+  bool capslock = FALSE;
+  uint8_t scanTemp = 0;
+  
+  if (!keyboard_state.keyboard_input_on){
+    keyboard_state.buffer_index = 0;
+    framebuffer_write(21,11,'L',0xa,0);
+  } else {
+    keyboard_state.buffer_index = 0;
+    col = 14;
+    while (is_keyboard_blocking()){
+      uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
+      char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
+
+      if (scancode == 0x3A){
+        capslock = !capslock;
+        do {
+          scancode = in(KEYBOARD_DATA_PORT);
+        } while (scancode == 0x3A);
+      }
+
+      if (scancode == 0x2A || scancode == 0x36){
+        shift = TRUE;
+      }
+
+      if (scancode == 0x1D){
+        ctrl = TRUE;
+      }
+
+      if (scancode == 0x38){
+        alt = TRUE;
+      }
+
+      if (scancode == 0x9D){
+        ctrl = FALSE;
+      }
+      
+      if (scancode == 0xAA || scancode == 0xB6){
+        shift = FALSE;
+      }
+
+      if (scancode == 0xB8){
+        alt = FALSE;
+      }
+
+      if (scancode == 0x0E && shift && keyboard_state.buffer_index > 0 && keyboard_state.keyboard_buffer[keyboard_state.buffer_index - 1] != ' ') {
+        keyboard_state.buffer_index--;
+        col--;
+        backspaceLine[row]--;
+        framebuffer_write(row, col, 0, 0x0c, 0);
+        framebuffer_set_cursor(row, col);
+        mapped_char = 0;
+      } 
+
+      if (mapped_char == '\b') {
+        if (!keyboard_state.buffer_index) {
+          // nothing to delete
+        } else if (col) {
+          keyboard_state.buffer_index--;
+          col--;
+          backspaceLine[row]--;
+        } else if (col == 0){
+          if (row <= 0) {
+            row = 0;
+          } else {
+            row--;
+            col = backspaceLine[row];
+          }
+        }
+        framebuffer_write(row, col, 0, 0x0c, 0);
+        framebuffer_set_cursor(row, col);
+        mapped_char = 0;
+        do {
+          scancode = in(KEYBOARD_DATA_PORT);
+        } while (scancode == 0x0E);
+      } 
+
+      if (mapped_char=='\n') {
+        keyboard_state.buffer_index=0;
+        framebuffer_set_cursor(row + 1, col);
+        mapped_char = 0;
+        if (row >= 24) {
+          row = 24;
+        } else {
+          row++;
+        }
+        keyboard_state_deactivate();
+      } 
+
+      if (mapped_char != 0) {
+        if (capslock && !shift){ // hanya capslock
+          if (mapped_char >= 'a' && mapped_char <= 'z'){ 
+            mapped_char -= 32;
+          }
+        } else if (!capslock && shift){ // hanya shift
+          if (mapped_char >= 'a' && mapped_char <= 'z'){
+            mapped_char -= 32;
+          }
+        } else if (capslock && shift){ // capslock dan shift
+          if (mapped_char >= 'A' && mapped_char <= 'Z'){
+            mapped_char += 32;
+          }
+        }
+
+        keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
+        keyboard_state.buffer_index++;
+        framebuffer_write(row, col, mapped_char, 0x0c, 0);
+        
+        
+        if (col >= 79){
+          if (row >= 24) {
+            row = 24;
+          } else {
+            row++;
+          }
+          col = 0;
+        } else {
+          col++;
+          backspaceLine[row]++;
+        }
+        
+        if (col >= 79 && row < 24){
+          framebuffer_set_cursor(row + 1, 0);
+        } else if (row >= 24){ 
+          framebuffer_set_cursor(24, 0);
+        } else {
+          framebuffer_set_cursor(row, col);
+        }
+
+        ctrl = alt;
+        alt = ctrl;
+
+        do {
+          scanTemp = in(KEYBOARD_DATA_PORT);
+        } while (scanTemp == scancode);
+      }
+    }
+  }
+  
+  pic_ack(IRQ_KEYBOARD);
 }
