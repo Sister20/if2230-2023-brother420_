@@ -112,22 +112,22 @@ void puts2(char *str, uint32_t len, uint32_t color) {
     }
 }
 
-void puts_long_text(char *str, uint32_t len, uint32_t color) {
+void puts_long_text(char *str, uint32_t len, uint32_t color, uint8_t *row_shells) {
     uint8_t j = 0;
     uint8_t k = 0;
     for (uint32_t i = 0; i < len; i++) {
         if (j == 80) {
-            row_shell++;
+            (*row_shells)++;
             j = 0;
             k++;
         }
         if (str[i] == '\n') {
-            row_shell++;
+            (*row_shells)++;
             j = 0;
             k++;
             continue;
         }
-        framebuffer_write(row_shell, j, str[i], color, 0);
+        framebuffer_write(*row_shells, j, str[i], color, 0);
         j++;
     }
     addRow(k);
@@ -460,7 +460,7 @@ void command_call_cat(char *rmCommandName){
         }
     }
 
-    puts_long_text(request.buf, request.buffer_size, 0x0e);
+    puts_long_text(request.buf, request.buffer_size, 0x0e, &row_shell);
 
     framebuffer_write(23, 79, 'L', 0x0F, 0x00);
 
@@ -753,6 +753,11 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
     // Syscall push current dir
     else if (cpu.eax == 11) {
         push_current_dir((struct CURRENT_DIR_STACK *) cpu.ebx, cpu.ecx);
+    }
+
+    // Syscall puts long text
+    else if (cpu.eax == 12) {
+        puts_long_text((char *) cpu.ebx, cpu.ecx, 0x0E, (uint8_t*) (cpu.edx));
     }
 }
 
