@@ -179,15 +179,15 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         *((int8_t*) cpu.ecx) = delete(request);
 
     } else if (cpu.eax == 4) {
-        char *cwd = convert_to_paths((struct CURRENT_DIR_STACK *) cpu.ecx);
-        template((uint32_t) cpu.edx, cwd);
+        // char *cwd = convert_to_paths((struct CURRENT_DIR_STACK *) cpu.ecx);
+        template((uint32_t) cpu.edx, (char *) cpu.ecx);
         clear_keyboard_buffer();
         keyboard_state_activate();
         __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
         while (is_keyboard_blocking());
         char buf[KEYBOARD_BUFFER_SIZE];
         get_keyboard_buffer(buf);
-        memcpy((char *) cpu.ebx, buf, 0x20);
+        memcpy((char *) cpu.ebx, buf, 0x100);
 
     } else if (cpu.eax == 5) {
         puts2((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side

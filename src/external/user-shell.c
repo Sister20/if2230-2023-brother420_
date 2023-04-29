@@ -40,6 +40,30 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("int $0x30");
 }
 
+char* dirStackConverter(struct CURRENT_DIR_STACK *dir){
+    struct FAT32DriverState state_driver;
+    char temp[255];
+    char * cwd = temp;
+    int i = 1;
+    int j = 0;
+    int k = 0;
+    while(i <= dir->top){
+        cwd[j] = '/';
+        j++;
+        syscall(8, (uint32_t) &state_driver.dir_table_buf, dir->cd_stack[i], 1);
+        memcpy(dir->cd_stack_name[i], state_driver.dir_table_buf.table[0].name, 8);
+        while(dir->cd_stack_name[i][k] != '\0'){
+            cwd[j] = dir->cd_stack_name[i][k];
+            j++;
+            k++;
+        }
+        k = 0;
+        i++;
+    }
+    cwd[j] = '\0';
+    return cwd;
+}
+
 // TODO: pindahin semua fungsi dari interupt.c
 
 /**
@@ -126,7 +150,7 @@ uint8_t command_call_cd(char *path){
         return 0;
     }
 
-    for (int i = 0; i < 64; i++){
+    for (int i = 1; i < 64; i++){
         if (state_driver.dir_table_buf.table[i].user_attribute == UATTR_NOT_EMPTY){
             if (memcmp(state_driver.dir_table_buf.table[i].name, path_name, 8) == 0 && 
                 memcmp(state_driver.dir_table_buf.table[i].ext, path_ext, 3) == 0){
@@ -148,6 +172,7 @@ void command_call_multi_cd(char *path){
     while (path[i] != '\0'){
         if (path[i] == '/'){
             j = i;
+            break;
         }
         i++;
     }
@@ -159,7 +184,8 @@ void command_call_multi_cd(char *path){
         char new_path[64];
         memcpy(new_path, path, j);
         new_path[j] = '\0';
-        command_call_cd(new_path);
+        uint8_t retVal = command_call_cd(new_path);
+        if (retVal == 0)
         command_call_multi_cd(path+j+1);
     }
 }
@@ -797,7 +823,8 @@ int main(void) {
     }
     
     while (TRUE) {
-        syscall(4, (uint32_t) buf, (uint32_t) &current_dir_stack, (uint32_t) row_shell);
+        char * cwdpath = dirStackConverter(&current_dir_stack);
+        syscall(4, (uint32_t) buf, (uint32_t) cwdpath, (uint32_t) row_shell);
         row_shell++;
         command = getCommandInput((char*) buf, 16);
         
