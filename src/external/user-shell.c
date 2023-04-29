@@ -729,15 +729,17 @@ void command_call_whereis(char *whCommandName){
 
 void command_call_mv(char *path){
     struct FAT32DriverState state_driver;
+    struct FAT32DriverState state_driver2;
     // read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
     // read_clusters(&state_driver.fat_table, 1, 1);
     syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
-    syscall(8, (uint32_t) &state_driver.fat_table, 1, 1);
 
+    uint32_t location;
     bool isFolder = FALSE;
-
+    struct ClusterBuffer cbuf[4];
     struct FAT32DriverRequest request = {
         .parent_cluster_number  = current_directory_cluster,
+        .buf                    = cbuf,
     };
 
     char new_name[8];
@@ -801,13 +803,17 @@ void command_call_mv(char *path){
                 // File ditemukan
                 request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
                 fileFound = TRUE;
-                break;      
+                location = state_driver.dir_table_buf.table[m].cluster_high << 16 | state_driver.dir_table_buf.table[m].cluster_low;
+                syscall(8, (uint32_t) &state_driver2.dir_table_buf, location, 1);
+                break;     
             }
         }
     }
 
-    if (j + 1 == '/'){
+    if (path[j+1] == '.' && path[j+2] == '/'){
         // TODO pindah direktori
+
+
     } else {
 
         uint8_t k = isFolder ? j : j+1;
@@ -849,7 +855,9 @@ void command_call_mv(char *path){
                 return;
             }
 
-            if (j-k-1 < 3){
+            if (j-k-1 == 0){
+                // do nothing extensi tidak berubah
+            } else if (j-k-1 < 3){
                 for (int z = j-k-1; z < 3; z++){
                     new_ext[z] = '\0';
                 }
@@ -859,8 +867,11 @@ void command_call_mv(char *path){
         if (fileFound){
             memcpy(state_driver.dir_table_buf.table[m].name, new_name, 8);
             memcpy(state_driver.dir_table_buf.table[m].ext, new_ext, 3);
+            memcpy(state_driver2.dir_table_buf.table[0].name, new_name, 8);
+            memcpy(state_driver2.dir_table_buf.table[0].ext, new_ext, 3);
             // write_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
             syscall(13, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+            syscall(13, (uint32_t) &state_driver2.dir_table_buf, location, 1);
         }
 
     }
