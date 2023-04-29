@@ -75,6 +75,10 @@ void addRow(int n){
   row += n;
 }
 
+void setRow(int n){
+  row = n;
+}
+
 bool altF4(){
   return altFour;
 }

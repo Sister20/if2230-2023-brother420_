@@ -64,7 +64,8 @@ void pic_remap(void) {
 //     __attribute__((unused)) struct CPURegister cpu,
 //     uint32_t int_number,
 //     __attribute__((unused)) struct InterruptStack info
-// ) {
+// ) {e_driver2 merupakan MILIK file/folder yang ingin diubah
+
 
 //    switch (int_number) {
 //         case PAGE_FAULT:
@@ -249,6 +250,14 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
     // Syscall initialize dir stack
     else if (cpu.eax == 16) {
         init_dir_stack((struct DIR_STACK *) cpu.ebx);
+    }
+
+    // Syscall clear screen
+    else if (cpu.eax == 17) {
+        setRow(0);
+        framebuffer_clear();
+        template((uint32_t) cpu.edx, (char *) cpu.ecx);
+        clear_keyboard_buffer();
     }
 }
 

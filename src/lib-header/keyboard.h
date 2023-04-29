@@ -83,6 +83,8 @@ void keyboard_isr(void);
 */
 void addRow(int row);
 
+void setRow(int row);
+
 void setCol(uint8_t cols);
 
 #endif
