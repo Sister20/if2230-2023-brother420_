@@ -92,9 +92,9 @@ char* dirStackConverter(struct CURRENT_DIR_STACK *dir){
 */
 uint8_t getCommandInput(char *input, uint8_t len){
     char *command[] = {"cd ", "ls -a", "mkdir ", "cat ", "cp ", "rm ", "mv ", "whereis ",
-                        "ls -ff", "ls -F", "ls -f", "ls"};
-    uint8_t command_len[] = {3, 5, 6, 4, 3, 3, 3, 8, 6, 5, 5, 2};
-    for (uint8_t i = 0; i < 12; i++){
+                        "ls -ff", "ls -F", "ls -f", "ls", "cls"};
+    uint8_t command_len[] = {3, 5, 6, 4, 3, 3, 3, 8, 6, 5, 5, 2, 3};
+    for (uint8_t i = 0; i < 13; i++){
         if (len >= command_len[i] && memcmp(input, command[i], command_len[i]) == 0){
             return i;
         }
@@ -1022,6 +1022,10 @@ int main(void) {
                 // ls
                 command_call_ls(0);
                 break;
+            case 12:
+                // cls
+                row_shell = 0;
+                syscall(17, (uint32_t) buf, (uint32_t) cwdpath, (uint32_t) row_shell);
             default:
                 // command not found
                 // framebuffer_write(0, 79, 'x', 0x0f, 0);
