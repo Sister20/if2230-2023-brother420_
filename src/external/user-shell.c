@@ -768,7 +768,7 @@ void command_call_mv(char *path){
     uint8_t k = 0;
     char newName[8] = {0};
     char newExt[3] = {0};
-    if (path[i] != '/'){
+    if (path[i+1] != '/'){
         // rename
         
         i++;
@@ -827,6 +827,76 @@ void command_call_mv(char *path){
             }
         }
         
+    }
+
+    else {
+        // change dir
+        int temp = current_directory_cluster;
+        // char newPath[8] = {0};
+        if (path[i+1] == '.' && path[i+2] == '.' && path[i+3] == '/'){
+            command_call_cd("..");
+            current_directory_cluster = temp;
+            
+        }
+
+        else {
+            uint8_t kk = 0;
+            char newPath[8] = {0};
+            i+=2;
+            while (path[i] != '\0'){
+                newPath[kk] = path[i];
+                i++;
+                kk++;
+            }
+            int m;
+            uint32_t location;
+            uint32_t selfLocation;
+            for (m = 1; m < 64; m++){
+                if (state_driver.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+                    if (memcmp(state_driver.dir_table_buf.table[m].name, newPath, 8) == 0 && 
+                        memcmp(state_driver.dir_table_buf.table[m].ext, "\0\0\0", 3) == 0){
+                            for (int n = 1; n < 64; n++){
+                                if (memcmp(state_driver.dir_table_buf.table[n].name, request.name, 8) == 0 && 
+                                    memcmp(state_driver.dir_table_buf.table[n].ext, request.ext, 3) == 0){
+                                        // Folder ketemu
+                                        request.buffer_size = state_driver.dir_table_buf.table[n].filesize;
+                                        // syscall(3, (uint32_t) &request, (uint32_t) &deleted, 0);
+                                        location = state_driver.dir_table_buf.table[m].cluster_high << 16 | state_driver.dir_table_buf.table[m].cluster_low;
+                                        selfLocation = state_driver.dir_table_buf.table[n].cluster_high << 16 | state_driver.dir_table_buf.table[n].cluster_low;
+                                        request.parent_cluster_number = location;
+
+                                        syscall(8, (uint32_t) &state_driver2.dir_table_buf, location, 1);
+                                        
+                                        // syscall(2, (uint32_t) &request, 0, 0);
+                                        for (int o = 1; o < 64; o++){
+                                            if (state_driver2.dir_table_buf.table[o].user_attribute != UATTR_NOT_EMPTY){
+                                                memcpy(state_driver2.dir_table_buf.table[o].name, request.name, 8);
+                                                memcpy(state_driver2.dir_table_buf.table[o].ext, request.ext, 3);
+                                                state_driver2.dir_table_buf.table[o].filesize = request.buffer_size;
+                                                state_driver2.dir_table_buf.table[o].attribute = 0;
+                                                state_driver2.dir_table_buf.table[o].user_attribute = UATTR_NOT_EMPTY;
+                                                state_driver2.dir_table_buf.table[o].cluster_high = 0;
+                                                state_driver2.dir_table_buf.table[o].cluster_low = selfLocation;
+                                                syscall(13, (uint32_t) &state_driver2.dir_table_buf, location, 1);
+                                                break;
+                                            }
+                                        }
+
+                                        memcpy(state_driver.dir_table_buf.table[n].name, "\0\0\0\0\0\0\0\0", 8);
+                                        memcpy(state_driver.dir_table_buf.table[n].ext, "\0\0\0", 3);
+                                        state_driver.dir_table_buf.table[n].filesize = 0;
+                                        state_driver.dir_table_buf.table[n].attribute = 0;
+                                        state_driver.dir_table_buf.table[n].user_attribute = 0;
+                                        state_driver.dir_table_buf.table[n].cluster_high = 0;
+                                        state_driver.dir_table_buf.table[n].cluster_low = 0;
+                                        syscall(13, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+                                        break; 
+                                }    
+                            }
+                    }
+                }
+            }
+        }
     }
 }
 
