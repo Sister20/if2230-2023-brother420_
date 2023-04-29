@@ -130,7 +130,8 @@ void puts_long_text(char *str, uint32_t len, uint32_t color, uint8_t *row_shells
         framebuffer_write(*row_shells, j, str[i], color, 0);
         j++;
     }
-    addRow(k);
+    (*row_shells) ++;
+    addRow(k+1);
 }
 
 void template(uint32_t row_shells, char * cwd){
