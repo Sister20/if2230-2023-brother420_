@@ -195,7 +195,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
 
     // Syscall cd
     else if (cpu.eax == 6) {
-        puts_line((char*) cpu.ebx, cpu.ecx, cpu.edx, 8, 0x0F);
+        puts_line((char*) cpu.ebx, cpu.ecx, cpu.edx, 12, 0x0F);
     }
 
     // Syscall addrow

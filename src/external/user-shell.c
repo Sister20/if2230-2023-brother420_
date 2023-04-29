@@ -77,18 +77,24 @@ char* dirStackConverter(struct CURRENT_DIR_STACK *dir){
  * whereis	- Mencari file/folder dengan nama yang sama diseluruh file system
 
  * @return 0 cd (spasi)
- * @return 1 ls
+ * @return 1 ls -a
  * @return 2 mkdir (spasi)
  * @return 3 cat (spasi)
  * @return 4 cp (spasi)
  * @return 5 rm (spasi)
  * @return 6 mv (spasi)
  * @return 7 whereis (spasi)
+ * @return 8 ls -ff
+ * @return 9 ls -F
+ * @return 10 ls -f
+ * @return 11 ls
+ * @return 255 command not found
 */
 uint8_t getCommandInput(char *input, uint8_t len){
-    char *command[] = {"cd ", "ls", "mkdir ", "cat ", "cp ", "rm ", "mv ", "whereis "};
-    uint8_t command_len[] = {3, 2, 6, 4, 3, 3, 3, 8};
-    for (uint8_t i = 0; i < 8; i++){
+    char *command[] = {"cd ", "ls -a", "mkdir ", "cat ", "cp ", "rm ", "mv ", "whereis ",
+                        "ls -ff", "ls -F", "ls -f", "ls"};
+    uint8_t command_len[] = {3, 5, 6, 4, 3, 3, 3, 8, 6, 5, 5, 2};
+    for (uint8_t i = 0; i < 12; i++){
         if (len >= command_len[i] && memcmp(input, command[i], command_len[i]) == 0){
             return i;
         }
@@ -96,24 +102,82 @@ uint8_t getCommandInput(char *input, uint8_t len){
     return 255;
 }
 
-void command_call_ls(void){
+/**
+ * @param type 0 ls
+ * @param type 1 ls -F
+ * @param type 2 ls -f
+ * @param type 3 ls -ff
+ * @param type 4 ls -a
+*/
+void command_call_ls(uint8_t type){
     struct FAT32DriverState state_driver;
     // read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
     syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
     
     int col = 0;
     int row_add_needed = 1;
-
+    bool isFile = FALSE;
+    
     for (int i = 1; i < 64; i++){
+        char nprinter[12] = {0};
+        char aprinter[12] = {0};
+        char Fprinter[12] = {0};
+        char fprinter[12] = {0};
+        char ffprinter[12] = {0};
 
         if (state_driver.dir_table_buf.table[i].user_attribute == UATTR_NOT_EMPTY){
-            if (col == 5){
+            if (col == 4 && type >= 3){
+                col = 0;
+                row_shell++;
+                row_add_needed++;
+            } 
+            else if (col == 5){
                 col = 0;
                 row_shell++;
                 row_add_needed++;
             }
-            syscall(6, (uint32_t) state_driver.dir_table_buf.table[i].name, row_shell, col*16);
-            col++;
+            memcpy(aprinter, state_driver.dir_table_buf.table[i].name, 8);
+            memcpy(nprinter, state_driver.dir_table_buf.table[i].name, 8);
+            memcpy(aprinter+9, state_driver.dir_table_buf.table[i].ext, 3);
+            if (memcmp(state_driver.dir_table_buf.table[i].ext, "\0\0\0", 3) != 0){
+                // File
+                isFile = TRUE;
+                aprinter[8] = '.';
+                memcpy(fprinter, aprinter, 8);
+                memcpy(ffprinter, aprinter, 12);
+            } else {
+                // Folder
+                isFile = FALSE;
+                memcpy(Fprinter, aprinter, 8);
+            }
+
+            switch (type){
+            case 0:
+                syscall(6, (uint32_t) nprinter, row_shell, col*16);
+                break;
+            case 1:
+                syscall(6, (uint32_t) Fprinter, row_shell, col*16);
+                break;
+            case 2:
+                syscall(6, (uint32_t) fprinter, row_shell, col*16);
+                break;
+            case 3:
+                syscall(6, (uint32_t) ffprinter, row_shell, col*20);
+                break;
+            case 4:
+                syscall(6, (uint32_t) aprinter, row_shell, col*20);
+                break;
+            default:
+                break;
+            }
+            
+            if (isFile && type != 1){
+                col++;
+            } else if (!isFile && type == 1){
+                col++;
+            } else if (type == 0 || type == 4){
+                col++;
+            }
         }
     }
     row_shell++;
@@ -835,8 +899,8 @@ int main(void) {
                 command_call_multi_cd(((char *) buf) + 3);
                 break;
             case 1:
-                // ls
-                command_call_ls();
+                // ls -a
+                command_call_ls(4);
                 break;
             case 2:
                 // mkdir
@@ -861,6 +925,22 @@ int main(void) {
             case 7:
                 // whereis
                 command_call_whereis((char *) buf);
+                break;
+            case 8:
+                // ls -ff
+                command_call_ls(3);
+                break;
+            case 9:
+                // ls -F
+                command_call_ls(1);
+                break;
+            case 10:
+                // ls -f
+                command_call_ls(2);
+                break;
+            case 11:
+                // ls
+                command_call_ls(0);
                 break;
             default:
                 // command not found
