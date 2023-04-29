@@ -831,11 +831,53 @@ void command_call_mv(char *path){
 
     else {
         // change dir
-        int temp = current_directory_cluster;
+        char temporal[8];
+        memcpy(temporal, state_driver.dir_table_buf.table[0].name, 8);
+        // int temp = current_directory_cluster;
         // char newPath[8] = {0};
-        if (path[i+1] == '.' && path[i+2] == '.' && path[i+3] == '/'){
+        if (path[i+2] == '.' && path[i+3] == '.'){
+            uint32_t location;
+            uint32_t selfLocation;
+            for (int n = 1; n < 64; n++){
+                if (memcmp(state_driver.dir_table_buf.table[n].name, request.name, 8) == 0 && 
+                    memcmp(state_driver.dir_table_buf.table[n].ext, request.ext, 3) == 0){
+                        // Folder ketemu
+                        request.buffer_size = state_driver.dir_table_buf.table[n].filesize;
+                        // syscall(3, (uint32_t) &request, (uint32_t) &deleted, 0);
+                        selfLocation = state_driver.dir_table_buf.table[n].cluster_high << 16 | state_driver.dir_table_buf.table[n].cluster_low;
+                        memcpy(state_driver.dir_table_buf.table[n].name, "\0\0\0\0\0\0\0\0", 8);
+                        memcpy(state_driver.dir_table_buf.table[n].ext, "\0\0\0", 3);
+                        state_driver.dir_table_buf.table[n].filesize = 0;
+                        state_driver.dir_table_buf.table[n].attribute = 0;
+                        state_driver.dir_table_buf.table[n].user_attribute = 0;
+                        state_driver.dir_table_buf.table[n].cluster_high = 0;
+                        state_driver.dir_table_buf.table[n].cluster_low = 0;
+                        syscall(13, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+                        
+                        break;
+                        
+                    }
+            }
             command_call_cd("..");
-            current_directory_cluster = temp;
+            syscall(8, (uint32_t) &state_driver2.dir_table_buf, current_directory_cluster, 1);
+            location = state_driver2.dir_table_buf.table[0].cluster_high << 16 | state_driver2.dir_table_buf.table[0].cluster_low;
+            
+            for (int o = 1; o < 64; o++){
+                if (state_driver2.dir_table_buf.table[o].user_attribute != UATTR_NOT_EMPTY){
+                    memcpy(state_driver2.dir_table_buf.table[o].name, request.name, 8);
+                    memcpy(state_driver2.dir_table_buf.table[o].ext, request.ext, 3);
+                    state_driver2.dir_table_buf.table[o].filesize = request.buffer_size;
+                    state_driver2.dir_table_buf.table[o].attribute = 0;
+                    state_driver2.dir_table_buf.table[o].user_attribute = UATTR_NOT_EMPTY;
+                    state_driver2.dir_table_buf.table[o].cluster_high = 0;
+                    state_driver2.dir_table_buf.table[o].cluster_low = selfLocation;
+                    syscall(13, (uint32_t) &state_driver2.dir_table_buf, location, 1);
+                    break;
+                }
+            }
+            
+            
+            command_call_cd(temporal);
             
         }
 
