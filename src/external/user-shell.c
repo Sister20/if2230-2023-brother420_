@@ -40,6 +40,30 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("int $0x30");
 }
 
+char* dirStackConverter(struct CURRENT_DIR_STACK *dir){
+    struct FAT32DriverState state_driver;
+    char temp[255];
+    char * cwd = temp;
+    int i = 1;
+    int j = 0;
+    int k = 0;
+    while(i <= dir->top){
+        cwd[j] = '/';
+        j++;
+        syscall(8, (uint32_t) &state_driver.dir_table_buf, dir->cd_stack[i], 1);
+        memcpy(dir->cd_stack_name[i], state_driver.dir_table_buf.table[0].name, 8);
+        while(dir->cd_stack_name[i][k] != '\0'){
+            cwd[j] = dir->cd_stack_name[i][k];
+            j++;
+            k++;
+        }
+        k = 0;
+        i++;
+    }
+    cwd[j] = '\0';
+    return cwd;
+}
+
 // TODO: pindahin semua fungsi dari interupt.c
 
 /**
@@ -53,18 +77,24 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
  * whereis	- Mencari file/folder dengan nama yang sama diseluruh file system
 
  * @return 0 cd (spasi)
- * @return 1 ls
+ * @return 1 ls -a
  * @return 2 mkdir (spasi)
  * @return 3 cat (spasi)
  * @return 4 cp (spasi)
  * @return 5 rm (spasi)
  * @return 6 mv (spasi)
  * @return 7 whereis (spasi)
+ * @return 8 ls -ff
+ * @return 9 ls -F
+ * @return 10 ls -f
+ * @return 11 ls
+ * @return 255 command not found
 */
 uint8_t getCommandInput(char *input, uint8_t len){
-    char *command[] = {"cd ", "ls", "mkdir ", "cat ", "cp ", "rm ", "mv ", "whereis "};
-    uint8_t command_len[] = {3, 2, 6, 4, 3, 3, 3, 8};
-    for (uint8_t i = 0; i < 8; i++){
+    char *command[] = {"cd ", "ls -a", "mkdir ", "cat ", "cp ", "rm ", "mv ", "whereis ",
+                        "ls -ff", "ls -F", "ls -f", "ls"};
+    uint8_t command_len[] = {3, 5, 6, 4, 3, 3, 3, 8, 6, 5, 5, 2};
+    for (uint8_t i = 0; i < 12; i++){
         if (len >= command_len[i] && memcmp(input, command[i], command_len[i]) == 0){
             return i;
         }
@@ -72,24 +102,82 @@ uint8_t getCommandInput(char *input, uint8_t len){
     return 255;
 }
 
-void command_call_ls(void){
+/**
+ * @param type 0 ls
+ * @param type 1 ls -F
+ * @param type 2 ls -f
+ * @param type 3 ls -ff
+ * @param type 4 ls -a
+*/
+void command_call_ls(uint8_t type){
     struct FAT32DriverState state_driver;
     // read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
     syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
     
     int col = 0;
     int row_add_needed = 1;
-
+    bool isFile = FALSE;
+    
     for (int i = 1; i < 64; i++){
+        char nprinter[12] = {0};
+        char aprinter[12] = {0};
+        char Fprinter[12] = {0};
+        char fprinter[12] = {0};
+        char ffprinter[12] = {0};
 
         if (state_driver.dir_table_buf.table[i].user_attribute == UATTR_NOT_EMPTY){
-            if (col == 5){
+            if (col == 4 && type >= 3){
+                col = 0;
+                row_shell++;
+                row_add_needed++;
+            } 
+            else if (col == 5){
                 col = 0;
                 row_shell++;
                 row_add_needed++;
             }
-            syscall(6, (uint32_t) state_driver.dir_table_buf.table[i].name, row_shell, col*16);
-            col++;
+            memcpy(aprinter, state_driver.dir_table_buf.table[i].name, 8);
+            memcpy(nprinter, state_driver.dir_table_buf.table[i].name, 8);
+            memcpy(aprinter+9, state_driver.dir_table_buf.table[i].ext, 3);
+            if (memcmp(state_driver.dir_table_buf.table[i].ext, "\0\0\0", 3) != 0){
+                // File
+                isFile = TRUE;
+                aprinter[8] = '.';
+                memcpy(fprinter, aprinter, 8);
+                memcpy(ffprinter, aprinter, 12);
+            } else {
+                // Folder
+                isFile = FALSE;
+                memcpy(Fprinter, aprinter, 8);
+            }
+
+            switch (type){
+            case 0:
+                syscall(6, (uint32_t) nprinter, row_shell, col*16);
+                break;
+            case 1:
+                syscall(6, (uint32_t) Fprinter, row_shell, col*16);
+                break;
+            case 2:
+                syscall(6, (uint32_t) fprinter, row_shell, col*16);
+                break;
+            case 3:
+                syscall(6, (uint32_t) ffprinter, row_shell, col*20);
+                break;
+            case 4:
+                syscall(6, (uint32_t) aprinter, row_shell, col*20);
+                break;
+            default:
+                break;
+            }
+            
+            if (isFile && type != 1){
+                col++;
+            } else if (!isFile && type == 1){
+                col++;
+            } else if (type == 0 || type == 4){
+                col++;
+            }
         }
     }
     row_shell++;
@@ -126,7 +214,7 @@ uint8_t command_call_cd(char *path){
         return 0;
     }
 
-    for (int i = 0; i < 64; i++){
+    for (int i = 1; i < 64; i++){
         if (state_driver.dir_table_buf.table[i].user_attribute == UATTR_NOT_EMPTY){
             if (memcmp(state_driver.dir_table_buf.table[i].name, path_name, 8) == 0 && 
                 memcmp(state_driver.dir_table_buf.table[i].ext, path_ext, 3) == 0){
@@ -148,6 +236,7 @@ void command_call_multi_cd(char *path){
     while (path[i] != '\0'){
         if (path[i] == '/'){
             j = i;
+            break;
         }
         i++;
     }
@@ -159,7 +248,8 @@ void command_call_multi_cd(char *path){
         char new_path[64];
         memcpy(new_path, path, j);
         new_path[j] = '\0';
-        command_call_cd(new_path);
+        uint8_t retVal = command_call_cd(new_path);
+        if (retVal == 0)
         command_call_multi_cd(path+j+1);
     }
 }
@@ -313,11 +403,15 @@ void command_call_cp(char *cpCommandName){
                 break;      
             }
         }
+        if (m == 63){
+            // File tidak ditemukan
+            return;
+        }
     }
 
     uint8_t k = 0;
     uint8_t l = 0;
-    while ((cpCommandName[j+4] != '.') && (cpCommandName[j+4] != ' ') && (k < 8)){
+    while ((cpCommandName[j+4] != '.') && (cpCommandName[j+4] != ' ') && (cpCommandName[j+4] != '\0') && (k < 8)){
         request.name[k] = cpCommandName[j+4];
         k++;
         j++;
@@ -328,7 +422,7 @@ void command_call_cp(char *cpCommandName){
         return;
     }
 
-    if (k == 8 && cpCommandName[j+4] != '.'){
+    if (k == 8 && cpCommandName[j+4] != '.' && cpCommandName[j+4] != '\0'){
         // Error karena nama file terlalu panjang
         return;
     }
@@ -349,7 +443,9 @@ void command_call_cp(char *cpCommandName){
         return;
     }
 
-    if (l < 3){
+    if (l == 0){
+        // do nothing karena ext tidak berubah
+    } else if (l < 3){
         for (int z = l; z < 3; z++){
             request.ext[z] = '\0';
         }
@@ -633,19 +729,22 @@ void command_call_whereis(char *whCommandName){
 
 void command_call_mv(char *path){
     struct FAT32DriverState state_driver;
+    struct FAT32DriverState state_driver2;
     // read_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
     // read_clusters(&state_driver.fat_table, 1, 1);
     syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
-    syscall(8, (uint32_t) &state_driver.fat_table, 1, 1);
 
+    uint32_t location;
+    uint32_t target_location;
     bool isFolder = FALSE;
-
+    struct ClusterBuffer cbuf[4];
     struct FAT32DriverRequest request = {
         .parent_cluster_number  = current_directory_cluster,
+        .buf                    = cbuf,
     };
 
-    char new_name[8];
-    char new_ext[3];
+    char new_name[8] = {0};
+    char new_ext[3] = {0};
     bool fileFound = FALSE;
     // bool validName = FALSE;
 
@@ -705,69 +804,134 @@ void command_call_mv(char *path){
                 // File ditemukan
                 request.buffer_size = state_driver.dir_table_buf.table[m].filesize;
                 fileFound = TRUE;
-                break;      
+                location = state_driver.dir_table_buf.table[m].cluster_high << 16 | state_driver.dir_table_buf.table[m].cluster_low;
+                syscall(8, (uint32_t) &state_driver2.dir_table_buf, location, 1);
+                break;     
             }
         }
     }
+    uint8_t adder = 0;
+    char target_name[8];
+    char target_ext[3];
 
-    if (j + 1 == '/'){
+    if (path[j] == '/'){
         // TODO pindah direktori
-    } else {
-
-        uint8_t k = isFolder ? j : j+1;
-        uint8_t l = 0;
-
-        if (path[k] == '\0' || path[k] == ' '){
-            // Error karena nama file tidak boleh kosong
-            return;
-        }
-
-        while ((path[k] != ' ') && (k-j-1 < 8) && (path[k] != '\0') && (path[k] != '.')){
-            new_name[l] = path[k];
-            k++;
-            l++;
-        }
-
-        if (l == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
-            // Error karena nama file terlalu panjang
-            return;
-        }
-
-        for (uint8_t z = l; z < 8; z++){
-            new_name[z] = '\0';
-        }
-
-        if (isFolder){
-            for (int z = 0; z < 3; z++){
-                new_ext[z] = '\0';
+        
+        if (memcmp(path + j + 1, "..", 2) == 0){
+            // pindah ke parent
+            if (current_directory_cluster == 0){
+                // Error karena sudah di root
+                return;
             }
+            target_location = state_driver.dir_table_buf.table[0].cluster_high << 16 | state_driver.dir_table_buf.table[0].cluster_low;
+            adder = 4; 
+
         } else {
-            j = k+1;
-            while ((path[j] != ' ') && (j-k-1 < 3)){
-                new_ext[j-k-1] = path[j];
-                j++;
+            // pindah ke child
+            for (int z = 0; z < 8; z++){
+                target_name[z] = '\0';
+            }
+            for (int z = 0; z < 3; z++){
+                target_ext[z] = '\0';
+            }
+            uint8_t k = j+1;
+            uint8_t l = 0;
+            while ((path[k] != ' ') && (k-j-2 < 8) && (path[k] != '\0') && (path[k] != '.')){
+                target_name[l] = path[k];
+                k++;
+                l++;
+                adder++;
             }
 
-            if (j-k-1 == 3 && path[j] != '\0' && path[j] != ' '){
-                // Error karena extensi terlalu panjang
+            if (l == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
+                // Error karena nama file terlalu panjang
                 return;
             }
 
-            if (j-k-1 < 3){
-                for (int z = j-k-1; z < 3; z++){
-                    new_ext[z] = '\0';
+            for (uint8_t z = l; z < 8; z++){
+                target_name[z] = '\0';
+            }
+
+            adder++;
+
+            for (m = 1; m < 64; m++){
+                if (state_driver2.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+                    if (memcmp(state_driver.dir_table_buf.table[m].name, target_name, 8) == 0 && 
+                        memcmp(state_driver.dir_table_buf.table[m].ext, target_ext, 3) == 0){
+                        // File ditemukan
+                        target_location = state_driver2.dir_table_buf.table[m].cluster_high << 16 | state_driver2.dir_table_buf.table[m].cluster_low;
+            
+                        break;     
+                    }
                 }
             }
         }
+    }
 
-        if (fileFound){
-            memcpy(state_driver.dir_table_buf.table[m].name, new_name, 8);
-            memcpy(state_driver.dir_table_buf.table[m].ext, new_ext, 3);
-            // write_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
-            syscall(13, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
+    else {
+        target_location = current_directory_cluster;
+    }
+
+    uint8_t k = isFolder ? j : j+1;
+    k += adder;
+    uint8_t l = 0;
+
+    if (path[k] == '\0' || path[k] == ' '){
+        // Error karena nama file tidak boleh kosong
+        return;
+    }
+
+    while ((path[k] != ' ') && (k-j-1-adder < 8) && (path[k] != '\0') && (path[k] != '.')){
+        new_name[l] = path[k];
+        k++;
+        l++;
+    }
+
+    if (l == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
+        // Error karena nama file terlalu panjang
+        return;
+    }
+
+    for (uint8_t z = l; z < 8; z++){
+        new_name[z] = '\0';
+    }
+
+    if (isFolder){
+        for (int z = 0; z < 3; z++){
+            new_ext[z] = '\0';
+        }
+    } else {
+        j = k+1;
+        while ((path[j] != ' ') && (j-k-1 < 3)){
+            new_ext[j-k-1] = path[j];
+            j++;
         }
 
+        if (j-k-1 == 3 && path[j] != '\0' && path[j] != ' '){
+            // Error karena extensi terlalu panjang
+            return;
+        }
+
+        if (j-k-1 == 0){
+            // do nothing extensi tidak berubah
+        } else if (j-k-1 < 3){
+            for (int z = j-k-1; z < 3; z++){
+                new_ext[z] = '\0';
+            }
+        }
     }
+
+    if (fileFound){
+        memcpy(state_driver.dir_table_buf.table[m].name, new_name, 8);
+        memcpy(state_driver.dir_table_buf.table[m].ext, new_ext, 3);
+        memcpy(state_driver2.dir_table_buf.table[0].name, new_name, 8);
+        memcpy(state_driver2.dir_table_buf.table[0].ext, new_ext, 3);
+        // write_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+        syscall(13, (uint32_t) &state_driver.dir_table_buf, target_location, 1);
+        syscall(13, (uint32_t) &state_driver2.dir_table_buf, location, 1);
+    }
+
+
 
     
 }
@@ -797,7 +961,8 @@ int main(void) {
     }
     
     while (TRUE) {
-        syscall(4, (uint32_t) buf, (uint32_t) &current_dir_stack, (uint32_t) row_shell);
+        char * cwdpath = dirStackConverter(&current_dir_stack);
+        syscall(4, (uint32_t) buf, (uint32_t) cwdpath, (uint32_t) row_shell);
         row_shell++;
         command = getCommandInput((char*) buf, 16);
         
@@ -808,8 +973,8 @@ int main(void) {
                 command_call_multi_cd(((char *) buf) + 3);
                 break;
             case 1:
-                // ls
-                command_call_ls();
+                // ls -a
+                command_call_ls(4);
                 break;
             case 2:
                 // mkdir
@@ -834,6 +999,22 @@ int main(void) {
             case 7:
                 // whereis
                 command_call_whereis((char *) buf);
+                break;
+            case 8:
+                // ls -ff
+                command_call_ls(3);
+                break;
+            case 9:
+                // ls -F
+                command_call_ls(1);
+                break;
+            case 10:
+                // ls -f
+                command_call_ls(2);
+                break;
+            case 11:
+                // ls
+                command_call_ls(0);
                 break;
             default:
                 // command not found

@@ -130,7 +130,8 @@ void puts_long_text(char *str, uint32_t len, uint32_t color, uint8_t *row_shells
         framebuffer_write(*row_shells, j, str[i], color, 0);
         j++;
     }
-    addRow(k);
+    (*row_shells) ++;
+    addRow(k+1);
 }
 
 void template(uint32_t row_shells, char * cwd){
@@ -179,15 +180,15 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         *((int8_t*) cpu.ecx) = delete(request);
 
     } else if (cpu.eax == 4) {
-        char *cwd = convert_to_paths((struct CURRENT_DIR_STACK *) cpu.ecx);
-        template((uint32_t) cpu.edx, cwd);
+        // char *cwd = convert_to_paths((struct CURRENT_DIR_STACK *) cpu.ecx);
+        template((uint32_t) cpu.edx, (char *) cpu.ecx);
         clear_keyboard_buffer();
         keyboard_state_activate();
         __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
         while (is_keyboard_blocking());
         char buf[KEYBOARD_BUFFER_SIZE];
         get_keyboard_buffer(buf);
-        memcpy((char *) cpu.ebx, buf, 0x20);
+        memcpy((char *) cpu.ebx, buf, 0x100);
 
     } else if (cpu.eax == 5) {
         puts2((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
@@ -195,7 +196,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
 
     // Syscall cd
     else if (cpu.eax == 6) {
-        puts_line((char*) cpu.ebx, cpu.ecx, cpu.edx, 8, 0x0F);
+        puts_line((char*) cpu.ebx, cpu.ecx, cpu.edx, 12, 0x0F);
     }
 
     // Syscall addrow
