@@ -735,6 +735,7 @@ void command_call_mv(char *path){
     syscall(8, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
 
     uint32_t location;
+    uint32_t target_location;
     bool isFolder = FALSE;
     struct ClusterBuffer cbuf[4];
     struct FAT32DriverRequest request = {
@@ -742,8 +743,8 @@ void command_call_mv(char *path){
         .buf                    = cbuf,
     };
 
-    char new_name[8];
-    char new_ext[3];
+    char new_name[8] = {0};
+    char new_ext[3] = {0};
     bool fileFound = FALSE;
     // bool validName = FALSE;
 
@@ -809,72 +810,128 @@ void command_call_mv(char *path){
             }
         }
     }
+    uint8_t adder = 0;
+    char target_name[8];
+    char target_ext[3];
 
-    if (path[j+1] == '.' && path[j+2] == '/'){
+    if (path[j] == '/'){
         // TODO pindah direktori
-
-
-    } else {
-
-        uint8_t k = isFolder ? j : j+1;
-        uint8_t l = 0;
-
-        if (path[k] == '\0' || path[k] == ' '){
-            // Error karena nama file tidak boleh kosong
-            return;
-        }
-
-        while ((path[k] != ' ') && (k-j-1 < 8) && (path[k] != '\0') && (path[k] != '.')){
-            new_name[l] = path[k];
-            k++;
-            l++;
-        }
-
-        if (l == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
-            // Error karena nama file terlalu panjang
-            return;
-        }
-
-        for (uint8_t z = l; z < 8; z++){
-            new_name[z] = '\0';
-        }
-
-        if (isFolder){
-            for (int z = 0; z < 3; z++){
-                new_ext[z] = '\0';
+        
+        if (memcmp(path + j + 1, "..", 2) == 0){
+            // pindah ke parent
+            if (current_directory_cluster == 0){
+                // Error karena sudah di root
+                return;
             }
+            target_location = state_driver.dir_table_buf.table[0].cluster_high << 16 | state_driver.dir_table_buf.table[0].cluster_low;
+            adder = 4; 
+
         } else {
-            j = k+1;
-            while ((path[j] != ' ') && (j-k-1 < 3)){
-                new_ext[j-k-1] = path[j];
-                j++;
+            // pindah ke child
+            for (int z = 0; z < 8; z++){
+                target_name[z] = '\0';
+            }
+            for (int z = 0; z < 3; z++){
+                target_ext[z] = '\0';
+            }
+            uint8_t k = j+1;
+            uint8_t l = 0;
+            while ((path[k] != ' ') && (k-j-2 < 8) && (path[k] != '\0') && (path[k] != '.')){
+                target_name[l] = path[k];
+                k++;
+                l++;
+                adder++;
             }
 
-            if (j-k-1 == 3 && path[j] != '\0' && path[j] != ' '){
-                // Error karena extensi terlalu panjang
+            if (l == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
+                // Error karena nama file terlalu panjang
                 return;
             }
 
-            if (j-k-1 == 0){
-                // do nothing extensi tidak berubah
-            } else if (j-k-1 < 3){
-                for (int z = j-k-1; z < 3; z++){
-                    new_ext[z] = '\0';
+            for (uint8_t z = l; z < 8; z++){
+                target_name[z] = '\0';
+            }
+
+            adder++;
+
+            for (m = 1; m < 64; m++){
+                if (state_driver2.dir_table_buf.table[m].user_attribute == UATTR_NOT_EMPTY){
+                    if (memcmp(state_driver.dir_table_buf.table[m].name, target_name, 8) == 0 && 
+                        memcmp(state_driver.dir_table_buf.table[m].ext, target_ext, 3) == 0){
+                        // File ditemukan
+                        target_location = state_driver2.dir_table_buf.table[m].cluster_high << 16 | state_driver2.dir_table_buf.table[m].cluster_low;
+            
+                        break;     
+                    }
                 }
             }
         }
+    }
 
-        if (fileFound){
-            memcpy(state_driver.dir_table_buf.table[m].name, new_name, 8);
-            memcpy(state_driver.dir_table_buf.table[m].ext, new_ext, 3);
-            memcpy(state_driver2.dir_table_buf.table[0].name, new_name, 8);
-            memcpy(state_driver2.dir_table_buf.table[0].ext, new_ext, 3);
-            // write_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
-            syscall(13, (uint32_t) &state_driver.dir_table_buf, current_directory_cluster, 1);
-            syscall(13, (uint32_t) &state_driver2.dir_table_buf, location, 1);
+    else {
+        target_location = current_directory_cluster;
+    }
+
+    uint8_t k = isFolder ? j : j+1;
+    k += adder;
+    uint8_t l = 0;
+
+    if (path[k] == '\0' || path[k] == ' '){
+        // Error karena nama file tidak boleh kosong
+        return;
+    }
+
+    while ((path[k] != ' ') && (k-j-1-adder < 8) && (path[k] != '\0') && (path[k] != '.')){
+        new_name[l] = path[k];
+        k++;
+        l++;
+    }
+
+    if (l == 8 && path[k] != '\0' && path[k] != ' ' && path[k] != '.'){
+        // Error karena nama file terlalu panjang
+        return;
+    }
+
+    for (uint8_t z = l; z < 8; z++){
+        new_name[z] = '\0';
+    }
+
+    if (isFolder){
+        for (int z = 0; z < 3; z++){
+            new_ext[z] = '\0';
+        }
+    } else {
+        j = k+1;
+        while ((path[j] != ' ') && (j-k-1 < 3)){
+            new_ext[j-k-1] = path[j];
+            j++;
         }
 
+        if (j-k-1 == 3 && path[j] != '\0' && path[j] != ' '){
+            // Error karena extensi terlalu panjang
+            return;
+        }
+
+        if (j-k-1 == 0){
+            // do nothing extensi tidak berubah
+        } else if (j-k-1 < 3){
+            for (int z = j-k-1; z < 3; z++){
+                new_ext[z] = '\0';
+            }
+        }
     }
+
+    if (fileFound){
+        memcpy(state_driver.dir_table_buf.table[m].name, new_name, 8);
+        memcpy(state_driver.dir_table_buf.table[m].ext, new_ext, 3);
+        memcpy(state_driver2.dir_table_buf.table[0].name, new_name, 8);
+        memcpy(state_driver2.dir_table_buf.table[0].ext, new_ext, 3);
+        // write_clusters(&state_driver.dir_table_buf, current_directory_cluster, 1);
+        syscall(13, (uint32_t) &state_driver.dir_table_buf, target_location, 1);
+        syscall(13, (uint32_t) &state_driver2.dir_table_buf, location, 1);
+    }
+
+
 
     
 }
