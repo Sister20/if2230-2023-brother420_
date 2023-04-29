@@ -403,11 +403,15 @@ void command_call_cp(char *cpCommandName){
                 break;      
             }
         }
+        if (m == 63){
+            // File tidak ditemukan
+            return;
+        }
     }
 
     uint8_t k = 0;
     uint8_t l = 0;
-    while ((cpCommandName[j+4] != '.') && (cpCommandName[j+4] != ' ') && (k < 8)){
+    while ((cpCommandName[j+4] != '.') && (cpCommandName[j+4] != ' ') && (cpCommandName[j+4] != '\0') && (k < 8)){
         request.name[k] = cpCommandName[j+4];
         k++;
         j++;
@@ -418,7 +422,7 @@ void command_call_cp(char *cpCommandName){
         return;
     }
 
-    if (k == 8 && cpCommandName[j+4] != '.'){
+    if (k == 8 && cpCommandName[j+4] != '.' && cpCommandName[j+4] != '\0'){
         // Error karena nama file terlalu panjang
         return;
     }
@@ -439,7 +443,9 @@ void command_call_cp(char *cpCommandName){
         return;
     }
 
-    if (l < 3){
+    if (l == 0){
+        // do nothing karena ext tidak berubah
+    } else if (l < 3){
         for (int z = l; z < 3; z++){
             request.ext[z] = '\0';
         }
